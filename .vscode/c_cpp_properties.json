@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/platform/include",
+                "${workspaceFolder}/platform/spl/inc",
+                "${workspaceFolder}/platform/bsp/cmsis",
+                "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/arm-none-eabi/include",
+                "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/lib/gcc/arm-none-eabi/15.3.1/include"
+            ],
+            "defines": [
+                "STM32F10X_MD",
+                "USE_STDPERIPH_DRIVER",
+                "HSE_VALUE=8000000"
+            ],
+            "compilerPath": "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-gcc.EXE",
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "windows-gcc-arm"
+        }
+    ],
+    "version": 4
+}
