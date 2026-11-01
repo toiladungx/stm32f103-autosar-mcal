@@ -10,187 +10,267 @@
  * @author  Nguyen Duc Dung
  **********************************************************/
 
-/* ===============================
- *           Includes
- * =============================== */
+ 
+/* ====================================================== */
+/*                     INCLUDES                           */
+/* ====================================================== */
+
 #include "Port.h"
-#include "Port_cfg.h"
+#include "Port_Cfg.h"
 #include "stm32f10x_rcc.h"
-#include <stddef.h>
 
-/* ===============================
- *     Static/Internal Variables
- * =============================== */
-static uint8_t Port_Initialized = 0; /* Biến trạng thái xác định Port đã init chưa */
+#if(PORT_DEV_ERROR_DETECT == STD_ON)
+#include "Det.h"
+#endif
 
-/* ===============================
- *      Internal Helper Function
- * =============================== */
 
-/**********************************************************
- * @brief Cấu hình 1 pin GPIO dựa trên thông số AUTOSAR
- * @param[in] pinCfg Con trỏ đến cấu trúc cấu hình pin
- **********************************************************/
-static void Port_ApplyPinConfig(const Port_PinConfigType *pinCfg)
+
+/* ====================================================== */
+/*              STATIC / INTERNAL VARIABLES               */
+/* ====================================================== */
+
+// Trạng thái khởi tạo
+static uint8 Port_Initialized = 0;
+
+// Con trỏ lưu bảng cấu hình sau khi Init
+static const Port_ConfigType *Port_ConfigPtr = NULL;
+
+
+
+/* ====================================================== */
+/*              INTERNAL HELPER FUNCTION                  */
+/* ====================================================== */
+
+// Cấu hình phần cứng cho 1 pin GPIO dựa trên struct cấu hình
+static void Port_ApplyPinConfig(const Port_PinConfigType *pinConfigPtr)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
-    uint16_t pinMask = PORT_GET_PIN_MASK(pinCfg->PinNum);
-
-    /* Kích hoạt clock cho PORT */
-    switch (pinCfg->PortNum)
+    GPIO_TypeDef *gpioPort = NULL;
+    uint16_t pinMask = 0;
+    
+    if(pinConfigPtr == NULL)
     {
-    case PORT_ID_A:
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-        break;
-    case PORT_ID_B:
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-        break;
-    case PORT_ID_C:
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-        break;
-    case PORT_ID_D:
-        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
-        break;
-    default:
         return;
     }
 
-    GPIO_InitStruct.GPIO_Pin = pinMask;
-    GPIO_InitStruct.GPIO_Speed = pinCfg->Speed;
-
-    /* Cấu hình mode - chỉ lấy ví dụ mode DIO */
-    if (pinCfg->Mode == PORT_PIN_MODE_DIO)
+    // Xác định PORT phần cứng và bật Clock RCC tương ứng
+    switch(pinConfigPtr->portNum)
     {
-        if (pinCfg->Direction == PORT_PIN_OUT)
-        {
-            GPIO_InitStruct.GPIO_Mode = (pinCfg->Pull == PORT_PIN_PULL_UP) ? GPIO_Mode_Out_PP : GPIO_Mode_Out_OD;
-        }
-        else
-        {
-            if (pinCfg->Pull == PORT_PIN_PULL_UP)
-                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
-            else if (pinCfg->Pull == PORT_PIN_PULL_DOWN)
-                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPD;
-            else
-                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-        }
-    }
-
-    if (pinCfg->Mode == PORT_PIN_MODE_ADC)
-    {
-        if(pinCfg->Direction == PORT_PIN_OUT)
-        {
+        case PORT_ID_A:
+            gpioPort = GPIOA;
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+            break;
+        case PORT_ID_B:
+            gpioPort = GPIOB;
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+            break;
+        case PORT_ID_C:
+            gpioPort = GPIOC;
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+            break;
+        case PORT_ID_D:
+            gpioPort = GPIOD;
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+            break;
+        default:
             return;
+    }
+
+    // Tính Pin Mask trực tiếp (1 << PinNum)
+    pinMask = (uint16)(1U << (pinConfigPtr->pinNum));
+
+    // Nạp thông số chân và tốc độ vào struct
+    GPIO_InitStruct.GPIO_Pin = pinMask;
+    GPIO_InitStruct.GPIO_Speed = pinConfigPtr->speed;
+
+    // Cấu hình GPIO_Mode theo Mode chức năng, Direction và Pull
+    if(pinConfigPtr->mode == PORT_PIN_MODE_DIO)
+    {
+        if(pinConfigPtr->direction == PORT_PIN_OUT)
+        {
+            if(pinConfigPtr->pull == PORT_PIN_PULL_UP)
+            {
+                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+            }else{
+                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+            }
+        }else{ //PORT_PIN_IN
+            if(pinConfigPtr->pull == PORT_PIN_PULL_UP)
+            {
+                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
+            }else if(pinConfigPtr->pull == PORT_PIN_PULL_DOWN)
+            {
+                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPD;
+            }else{
+                GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+            }
+        }
+    }else if (pinConfigPtr->mode == PORT_PIN_MODE_ADC)
+    {
+        // Chế độ Analog (chỉ nhận Input)
+        if (pinConfigPtr->direction == PORT_PIN_IN)
+        {
+            GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AIN;
+        }else{
+            return; //Không hợp lệ nếu cấu hình ADC mà chọn Output
+        }
+    }else if(pinConfigPtr->mode == PORT_PIN_MODE_PWM)
+    {
+        // Chế độ AF Push-Pull cho PWM (Timer CH)
+        GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
+    }
+    else{
+        // Các mode khác như ADC, PWM, SPI ... mở rộng thêm tùy MCU
+        return;
+    }
+
+    // Ghi cấu hình xuống thanh ghi phần cứng
+    GPIO_Init(gpioPort, &GPIO_InitStruct);
+
+    // Nếu là output, xuất mức logic khởi tạo (HIGH/LOW)
+    if(pinConfigPtr->direction == PORT_PIN_OUT)
+    {
+        if(pinConfigPtr->level == PORT_PIN_LEVEL_HIGH)
+        {
+            GPIO_SetBits(gpioPort, pinMask);
         }
         else
         {
-            GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AIN; // Chế độ analog cho ADC
+            GPIO_ResetBits(gpioPort, pinMask);
         }
-    }
-    /* Các mode khác như ADC, PWM, SPI ... mở rộng thêm tùy MCU */
-
-    /* Khởi tạo chân */
-    GPIO_Init(PORT_GET_PORT(pinCfg->PortNum), &GPIO_InitStruct);
-
-    /* Nếu là output, set level ban đầu */
-    if (pinCfg->Direction == PORT_PIN_OUT)
-    {
-        if (pinCfg->Level == PORT_PIN_LEVEL_HIGH)
-            GPIO_SetBits(PORT_GET_PORT(pinCfg->PortNum), pinMask);
-        else
-            GPIO_ResetBits(PORT_GET_PORT(pinCfg->PortNum), pinMask);
     }
 }
 
-/* ===============================
- *     Function Definitions
- * =============================== */
 
-/**********************************************************
- * @brief Khởi tạo toàn bộ các Port/Pin theo cấu hình
- * @details Hàm này sẽ gọi cấu hình từng pin theo bảng config.
- * @param[in] ConfigPtr Con trỏ đến cấu hình Port
- **********************************************************/
+
+/* ====================================================== */
+/*                  FUNCTION DEFINITIONS                  */
+/* ====================================================== */
+
 void Port_Init(const Port_ConfigType *ConfigPtr)
 {
-    if (ConfigPtr == NULL)
-        return;
-
-    for (uint16_t i = 0; i < ConfigPtr->PinCount; i++)
+#if(PORT_DEV_ERROR_DETECT == STD_ON)
+    if(ConfigPtr == NULL)
     {
-        Port_ApplyPinConfig(&ConfigPtr->PinConfigs[i]);
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_INIT_SERVICE_ID, PORT_E_INIT_FAILED);
+        return;
     }
-    Port_Initialized = 1;
+
+    if(ConfigPtr->pinConfigs == NULL)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_INIT_SERVICE_ID, PORT_E_INIT_FAILED);
+        return;
+    }
+#endif
+
+    // Duyệt từng chân trong mảng cấu hình và nạp vào phần cứng
+    for(uint16 i = 0U; i < ConfigPtr->numConfiguredPins; i++)
+    {
+        Port_ApplyPinConfig(&ConfigPtr->pinConfigs[i]);
+    }
+
+    Port_ConfigPtr = ConfigPtr;
+    Port_Initialized = 1U;
 }
 
-/**********************************************************
- * @brief Đổi chiều một chân Port (nếu cho phép runtime)
- * @details
- * Hàm sẽ đổi chiều (IN/OUT) của pin, nếu cho phép ở config.
- * @param[in] Pin Số hiệu pin (0..n-1)
- * @param[in] Direction Chiều mong muốn
- **********************************************************/
+
+
 void Port_SetPinDirection(Port_PinType Pin, Port_PinDirectionType Direction)
 {
-    if (!Port_Initialized)
+#if(PORT_DEV_ERROR_DETECT == STD_ON)
+    if(Port_Initialized == 0U)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_DIRECTION_SERVICE_ID, PORT_E_UNINIT);
         return;
-    if (Pin >= PortCfg_PinsCount)
-        return;
-    if (!PortCfg_Pins[Pin].DirectionChangeable)
-        return;
+    }
 
-    Port_PinConfigType *pinCfg = (Port_PinConfigType *)&PortCfg_Pins[Pin]; // cast bỏ const để update runtime (nếu cần)
-    pinCfg->Direction = Direction;
-    Port_ApplyPinConfig(pinCfg);
+    if(Pin >= Port_ConfigPtr->numConfiguredPins)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_DIRECTION_SERVICE_ID, PORT_E_PARAM_PIN);
+        return;
+    }
+
+    if(Port_ConfigPtr->pinConfigs[Pin].directionChangeable == 0)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_DIRECTION_SERVICE_ID, PORT_E_DIRECTION_UNCHANGEABLE);
+        return;
+    }
+#endif
+
+    // Tạo một bản sao cấu hình tạm thời của chân để cập nhật chiều mới
+    Port_PinConfigType tempPinConfig = Port_ConfigPtr->pinConfigs[Pin];
+    tempPinConfig.direction = Direction;
+
+    // Áp dụng cấu hình mới xuống thanh ghi phần cứng
+    Port_ApplyPinConfig(&tempPinConfig);
 }
 
-/**********************************************************
- * @brief Làm tươi lại chiều các pin không cho đổi runtime
- * @details Chỉ các pin cấu hình DirectionChangeable=0 sẽ được làm tươi lại chiều về giá trị config
- **********************************************************/
+
 void Port_RefreshPortDirection(void)
 {
-    if (!Port_Initialized)
-        return;
-    for (uint16_t i = 0; i < PortCfg_PinsCount; i++)
+#if(PORT_DEV_ERROR_DETECT == STD_ON)
+    if(Port_Initialized == 0U)
     {
-        if (!PortCfg_Pins[i].DirectionChangeable)
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_REFRESH_PORT_DIRECTION_SERVICE_ID, PORT_E_UNINIT);
+        return;
+    }
+#endif
+
+    for(uint16 i = 0U; i < Port_ConfigPtr->numConfiguredPins; i++)
+    {
+        // Chỉ refresh các chân không cho phép đổi chiều lúc chạy
+        if(Port_ConfigPtr->pinConfigs[i].directionChangeable == 0)
         {
-            Port_ApplyPinConfig(&PortCfg_Pins[i]);
+            Port_ApplyPinConfig(&Port_ConfigPtr->pinConfigs[i]);
         }
     }
 }
 
-/**********************************************************
- * @brief Lấy thông tin phiên bản của Port Driver
- * @param[out] versioninfo Con trỏ đến Std_VersionInfoType để nhận version
- **********************************************************/
-// void Port_GetVersionInfo(Std_VersionInfoType *versioninfo)
-// {
-//     if (versioninfo == NULL)
-//         return;
-//     versioninfo->vendorID = PORT_VENDOR_ID;
-//     versioninfo->moduleID = PORT_MODULE_ID;
-//     versioninfo->sw_major_version = PORT_SW_MAJOR_VERSION;
-//     versioninfo->sw_minor_version = PORT_SW_MINOR_VERSION;
-//     versioninfo->sw_patch_version = PORT_SW_PATCH_VERSION;
-// }
 
-/**********************************************************
- * @brief Đổi mode chức năng của một chân pin (nếu cho phép runtime)
- * @param[in] Pin Số hiệu pin
- * @param[in] Mode Mode chức năng cần chuyển sang
- **********************************************************/
+
 void Port_SetPinMode(Port_PinType Pin, Port_PinModeType Mode)
 {
-    if (!Port_Initialized)
+#if(PORT_DEV_ERROR_DETECT == STD_ON)
+    if(Port_Initialized == 0U)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_MODE_SERVICE_ID, PORT_E_UNINIT);
         return;
-    if (Pin >= PortCfg_PinsCount)
-        return;
-    if (!PortCfg_Pins[Pin].ModeChangeable)
-        return;
+    }
 
-    Port_PinConfigType *pinCfg = (Port_PinConfigType *)&PortCfg_Pins[Pin];
-    pinCfg->Mode = Mode;
-    Port_ApplyPinConfig(pinCfg);
+    if(Pin >= Port_ConfigPtr->numConfiguredPins)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_MODE_SERVICE_ID, PORT_E_PARAM_PIN);
+        return;
+    }
+
+    if(Port_ConfigPtr->pinConfigs[Pin].modeChangeable == 0U)
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_MODE_SERVICE_ID, PORT_E_MODE_UNCHANGEABLE);
+        return;
+    }
+
+    if ((Mode != PORT_PIN_MODE_DIO) &&
+        (Mode != PORT_PIN_MODE_ADC) &&
+        (Mode != PORT_PIN_MODE_PWM) &&
+        (Mode != PORT_PIN_MODE_SPI) &&
+        (Mode != PORT_PIN_MODE_CAN))
+    {
+        Det_ReportError(PORT_MODULE_ID, PORT_INSTANCE_ID, PORT_SET_PIN_MODE_SERVICE_ID, PORT_E_PARAM_INVALID_MODE);
+        return;
+    }
+#endif
+
+    // Tạo biến tạm, ko sửa trực tiếp vào vùng cấu hình gốc
+    Port_PinConfigType tempPinConfig = Port_ConfigPtr->pinConfigs[Pin];
+    tempPinConfig.mode = Mode;
+
+    // Áp dụng cấu hình mới xuống thanh ghi phần cứng
+    Port_ApplyPinConfig(&tempPinConfig);
 }
+
+
+
+// void Port_GetVersionInfo(Std_VersionInfoType *versioninfo)
+// {
+//     ;;
+// }

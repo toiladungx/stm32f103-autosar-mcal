@@ -1,5 +1,5 @@
 /**********************************************************
- * @file    Port_cfg.h
+ * @file    Port_Cfg.h
  * @brief   Port Driver Configuration Header File
  * @details File này chứa các định nghĩa cấu hình các chân Port 
  *          cho driver Port theo chuẩn AUTOSAR, dùng trên 
@@ -14,6 +14,8 @@
 #define PORT_CFG_H
 
 #include "Port.h"   /* Bao gồm các kiểu dữ liệu chuẩn của Port Driver */
+
+#define PORT_DEV_ERROR_DETECT STD_ON;
 
 /**********************************************************
  * Số lượng chân Port được cấu hình (tùy chỉnh theo dự án)
