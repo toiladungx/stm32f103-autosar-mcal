@@ -6,8 +6,8 @@
  *          đổi mode, đổi chiều, refresh và đọc thông tin version của port/pin.
  *
  * @version 1.0
- * @date    2024-06-19
- * @author  HALA Academy
+ * @date    23-9-2026
+ * @author  Nguyen Duc Dung
  **********************************************************/
 
 /* ===============================
@@ -80,7 +80,7 @@ static void Port_ApplyPinConfig(const Port_PinConfigType *pinCfg)
     {
         if(pinCfg->Direction == PORT_PIN_OUT)
         {
-            return
+            return;
         }
         else
         {
@@ -165,16 +165,16 @@ void Port_RefreshPortDirection(void)
  * @brief Lấy thông tin phiên bản của Port Driver
  * @param[out] versioninfo Con trỏ đến Std_VersionInfoType để nhận version
  **********************************************************/
-void Port_GetVersionInfo(Std_VersionInfoType *versioninfo)
-{
-    if (versioninfo == NULL)
-        return;
-    versioninfo->vendorID = PORT_VENDOR_ID;
-    versioninfo->moduleID = PORT_MODULE_ID;
-    versioninfo->sw_major_version = PORT_SW_MAJOR_VERSION;
-    versioninfo->sw_minor_version = PORT_SW_MINOR_VERSION;
-    versioninfo->sw_patch_version = PORT_SW_PATCH_VERSION;
-}
+// void Port_GetVersionInfo(Std_VersionInfoType *versioninfo)
+// {
+//     if (versioninfo == NULL)
+//         return;
+//     versioninfo->vendorID = PORT_VENDOR_ID;
+//     versioninfo->moduleID = PORT_MODULE_ID;
+//     versioninfo->sw_major_version = PORT_SW_MAJOR_VERSION;
+//     versioninfo->sw_minor_version = PORT_SW_MINOR_VERSION;
+//     versioninfo->sw_patch_version = PORT_SW_PATCH_VERSION;
+// }
 
 /**********************************************************
  * @brief Đổi mode chức năng của một chân pin (nếu cho phép runtime)

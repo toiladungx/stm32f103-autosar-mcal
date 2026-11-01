@@ -1,4 +1,4 @@
-/**
+/**********************************************************
  * @file    Dio.h
  * @brief   Digital Input/Output (DIO) Driver Header File
  * @details File này chứa các định nghĩa về kiểu dữ liệu và
@@ -13,9 +13,8 @@
 #ifndef _DIO_H_
 #define _DIO_H_
 
-#include "Dio_Cfg.h"
-#include  "Std_Types.h"
-#include "stm32f10x_gpio.h"
+#include  "Std_Types.h"         // Các kiểu dữ liệu chuẩn AUTOSAR     
+#include "stm32f10x_gpio.h"     // Thư viện chuẩn của STM32F103   
 
 
 /**********************************************************
