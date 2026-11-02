@@ -6,69 +6,83 @@
  *          dùng cho STM32F103.
  *
  * @version 1.0
- * @date    2024-06-19
- * @author  HALA Academy & ChatGPT
+ * @date    28-9-2026
+ * @author  Nguyen Duc Dung
  **********************************************************/
 
+/* ====================================================== */
+/*                        INCLUDES                        */
+/* ====================================================== */
 #include "Port_cfg.h"
 
-/**********************************************************
- * Cấu hình chi tiết cho từng chân GPIO
- * - PortNum:   PORT_ID_A, PORT_ID_B, PORT_ID_C, ...
- * - PinNum:    Số thứ tự chân trong port (0-15)
- * - Mode:      PORT_PIN_MODE_DIO, ...
- * - Direction: PORT_PIN_OUT / PORT_PIN_IN
- * - DirectionChangeable: 1 = Cho phép đổi chiều runtime
- * - Level:     PORT_PIN_LEVEL_HIGH / PORT_PIN_LEVEL_LOW
- * - Pull:      PORT_PIN_PULL_NONE / UP / DOWN
- * - ModeChangeable: 1 = Cho phép đổi mode runtime
- **********************************************************/
 
-const Port_PinConfigType PortCfg_Pins[PortCfg_PinsCount] = {
-    /* PA0: DIO, Output, Được phép đổi chiều & mode runtime, mặc định HIGH, không pull */
+/* ====================================================== */
+/*               PIN CONFIGURATION ARRAY                  */
+/* ====================================================== */
+/**
+ * @brief Bảng cấu hình chi tiết cho từng chân phần cứng
+ */
+const Port_PinConfigType Port_PinConfigurations[PORT_CONFIGURED_PINS_COUNT] = {
+    /* Pin 0 (PORT_CONF_PIN_LED): PA0 - DIO, Output, 50MHz, cho phép đổi chiều & mode */
     {
-        .PortNum = PORT_ID_A,
-        .PinNum = 0,
-        .Mode = PORT_PIN_MODE_DIO,
-        .Direction = PORT_PIN_OUT,
-        .DirectionChangeable = 1,
-        .Level = PORT_PIN_LEVEL_HIGH,
-        .Pull = PORT_PIN_PULL_NONE,
-        .ModeChangeable = 1
+        .portNum             = PORT_ID_A,
+        .pinNum              = 0U,
+        .mode                = PORT_PIN_MODE_DIO,
+        .direction           = PORT_PIN_OUT,
+        .speed               = GPIO_Speed_50MHz,
+        .pull                = PORT_PIN_PULL_NONE,
+        .level               = PORT_PIN_LEVEL_HIGH,
+        .directionChangeable = 1U,
+        .modeChangeable      = 1U
     },
-    /* PA1: DIO, Input, Không đổi chiều, pull-up */
+
+    /* Pin 1 (PORT_CONF_PIN_ADC): PA1 - ADC, Input, không đổi chiều/mode lúc chạy */
     {
-        .PortNum = PORT_ID_A,
-        .PinNum = 1,
-        .Mode = PORT_PIN_MODE_ADC,
-        .Direction = PORT_PIN_IN,
-        .DirectionChangeable = 0,
-        .Level = PORT_PIN_LEVEL_LOW, /* Không ảnh hưởng nếu là input */
-        .Pull = PORT_PIN_PULL_UP,
-        .ModeChangeable = 0
+        .portNum             = PORT_ID_A,
+        .pinNum              = 1U,
+        .mode                = PORT_PIN_MODE_ADC,
+        .direction           = PORT_PIN_IN,
+        .speed               = GPIO_Speed_2MHz,
+        .pull                = PORT_PIN_PULL_NONE,
+        .level               = PORT_PIN_LEVEL_LOW,
+        .directionChangeable = 0U,
+        .modeChangeable      = 0U
     },
-    /* PB0: DIO, Output, Không đổi chiều, mặc định LOW, không pull */
+
+    /* Pin 2 (PORT_CONF_PIN_RELAY): PB0 - DIO, Output, 10MHz, cố định chiều/mode */
     {
-        .PortNum = PORT_ID_B,
-        .PinNum = 0,
-        .Mode = PORT_PIN_MODE_DIO,
-        .Direction = PORT_PIN_OUT,
-        .DirectionChangeable = 0,
-        .Level = PORT_PIN_LEVEL_LOW,
-        .Pull = PORT_PIN_PULL_NONE,
-        .ModeChangeable = 0
+        .portNum             = PORT_ID_B,
+        .pinNum              = 0U,
+        .mode                = PORT_PIN_MODE_DIO,
+        .direction           = PORT_PIN_OUT,
+        .speed               = GPIO_Speed_10MHz,
+        .pull                = PORT_PIN_PULL_NONE,
+        .level               = PORT_PIN_LEVEL_LOW,
+        .directionChangeable = 0U,
+        .modeChangeable      = 0U
     },
-    /* PC13: DIO, Input, Được phép đổi mode runtime, pull-down */
+
+    /* Pin 3 (PORT_CONF_PIN_PWM): PC13 - PWM (Timer Alternate Function), 50MHz */
     {
-        .PortNum = PORT_ID_C,
-        .PinNum = 13,
-        .Mode = PORT_PIN_MODE_PWM,
-        .Direction = PORT_PIN_IN,
-        .DirectionChangeable = 1,
-        .Level = PORT_PIN_LEVEL_LOW,
-        .Pull = PORT_PIN_PULL_DOWN,
-        .ModeChangeable = 1
+        .portNum             = PORT_ID_C,
+        .pinNum              = 13U,
+        .mode                = PORT_PIN_MODE_PWM,
+        .direction           = PORT_PIN_OUT,
+        .speed               = GPIO_Speed_50MHz,
+        .pull                = PORT_PIN_PULL_NONE,
+        .level               = PORT_PIN_LEVEL_LOW,
+        .directionChangeable = 1U,
+        .modeChangeable      = 1U
     }
-    /* ... Thêm cấu hình cho các chân khác tại đây ... */
 };
 
+/* ========================================================================== */
+/*                      ROOT CONFIGURATION STRUCTURE                          */
+/* ========================================================================== */
+/**
+ * @brief Biến cấu hình gốc truyền vào hàm Port_Init()
+ */
+const Port_ConfigType Port_Config = {
+    .pinConfigs = Port_PinConfigurations,
+    .numConfiguredPins = PORT_CONFIGURED_PINS_COUNT
+};
