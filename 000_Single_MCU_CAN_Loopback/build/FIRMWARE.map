@@ -2356,17 +2356,17 @@ LOAD linker stubs
  .debug_line    0x00001e84      0x400 build/platform/spl/src/system_stm32f10x.o
  .debug_line    0x00002284      0x489 build/src/main.o
 
-.debug_str      0x00000000    0x3bbad
- .debug_str     0x00000000    0x3bbad build/platform/spl/src/stm32f10x_gpio.o
+.debug_str      0x00000000    0x3bc0d
+ .debug_str     0x00000000    0x3bc0d build/platform/spl/src/stm32f10x_gpio.o
                               0x390d7 (size before relaxing)
- .debug_str     0x0003bbad        0x0 build/platform/spl/src/stm32f10x_rcc.o
+ .debug_str     0x0003bc0d        0x0 build/platform/spl/src/stm32f10x_rcc.o
                               0x396a6 (size before relaxing)
- .debug_str     0x0003bbad        0x0 build/platform/spl/src/stm32f10x_can.o
+ .debug_str     0x0003bc0d        0x0 build/platform/spl/src/stm32f10x_can.o
                               0x3ad15 (size before relaxing)
- .debug_str     0x0003bbad        0x0 build/platform/spl/src/system_stm32f10x.o
+ .debug_str     0x0003bc0d        0x0 build/platform/spl/src/system_stm32f10x.o
                               0x38c85 (size before relaxing)
- .debug_str     0x0003bbad        0x0 build/src/main.o
-                              0x3aa76 (size before relaxing)
+ .debug_str     0x0003bc0d        0x0 build/src/main.o
+                              0x3aa9d (size before relaxing)
 
 .debug_frame    0x00000000      0x660
  .debug_frame   0x00000000      0x190 build/platform/spl/src/stm32f10x_gpio.o
