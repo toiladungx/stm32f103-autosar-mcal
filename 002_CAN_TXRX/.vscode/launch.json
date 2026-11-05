@@ -1,0 +1,57 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "HW Debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "serverpath": "C:/CTOOLS/openocd/bin/openocd.EXE",
+            "gdbPath": "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-gdb.EXE",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/FIRMWARE.elf",
+            "device": "STM32F103C8T6",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "svdFile": "${workspaceFolder}/platform/debug/STM32F103.svd",
+            "runToEntryPoint": "main",
+            "postLaunchCommands": [
+                "monitor reset halt",
+                "load"
+            ],
+            "postRestartCommands": [
+                "monitor reset halt",
+                "load"
+            ],
+            "showDevDebugOutput": "none",
+            "liveWatch": {
+                "enabled": false
+            },
+            "preLaunchTask": "Make: build"
+        },
+        {
+            "name": "Renode Debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "external",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/FIRMWARE.elf",
+            "device": "STM32F103C8T6",
+            "gdbPath": "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-gdb.EXE",
+            "gdbTarget": "localhost:3333",
+            "runToEntryPoint": "main",
+            "postLaunchCommands": [
+                "monitor reset",
+                "monitor start"
+            ],
+            "showDevDebugOutput": "none",
+            "liveWatch": {
+                "enabled": false
+            },
+            "preLaunchTask": "Renode: prepare",
+            "postDebugTask": "Renode: cleanup"
+        }
+    ]
+}

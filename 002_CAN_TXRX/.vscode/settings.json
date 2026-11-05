@@ -1,0 +1,4 @@
+{
+    "cmake.sourceDirectory": "D:/LEARNING/autosar_classic_ecu_depvelopment/STM32_Blink/platform",
+    "cortex-debug.variableUseNaturalFormat": false
+}
