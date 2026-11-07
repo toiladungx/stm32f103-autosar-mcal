@@ -35,10 +35,6 @@ Discarded input sections
                 0x00000000        0xc build/platform/spl/src/stm32f10x_gpio.o
  .text.GPIO_ReadOutputData
                 0x00000000        0x8 build/platform/spl/src/stm32f10x_gpio.o
- .text.GPIO_SetBits
-                0x00000000        0x4 build/platform/spl/src/stm32f10x_gpio.o
- .text.GPIO_ResetBits
-                0x00000000        0x4 build/platform/spl/src/stm32f10x_gpio.o
  .text.GPIO_WriteBit
                 0x00000000        0xc build/platform/spl/src/stm32f10x_gpio.o
  .text.GPIO_Write
@@ -131,7 +127,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_fsmc.o
  .debug_macro   0x00000000      0x273 build/platform/spl/src/stm32f10x_fsmc.o
  .debug_line    0x00000000      0x9c9 build/platform/spl/src/stm32f10x_fsmc.o
- .debug_str     0x00000000    0x3a973 build/platform/spl/src/stm32f10x_fsmc.o
+ .debug_str     0x00000000    0x3a996 build/platform/spl/src/stm32f10x_fsmc.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_fsmc.o
  .debug_frame   0x00000000      0x16c build/platform/spl/src/stm32f10x_fsmc.o
  .ARM.attributes
@@ -189,7 +185,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_exti.o
  .debug_macro   0x00000000       0x94 build/platform/spl/src/stm32f10x_exti.o
  .debug_line    0x00000000      0x374 build/platform/spl/src/stm32f10x_exti.o
- .debug_str     0x00000000    0x392dc build/platform/spl/src/stm32f10x_exti.o
+ .debug_str     0x00000000    0x392ff build/platform/spl/src/stm32f10x_exti.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_exti.o
  .debug_frame   0x00000000       0x90 build/platform/spl/src/stm32f10x_exti.o
  .ARM.attributes
@@ -255,7 +251,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_bkp.o
  .debug_macro   0x00000000      0x13e build/platform/spl/src/stm32f10x_bkp.o
  .debug_line    0x00000000      0x389 build/platform/spl/src/stm32f10x_bkp.o
- .debug_str     0x00000000    0x39c4e build/platform/spl/src/stm32f10x_bkp.o
+ .debug_str     0x00000000    0x39c71 build/platform/spl/src/stm32f10x_bkp.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_bkp.o
  .debug_frame   0x00000000       0xec build/platform/spl/src/stm32f10x_bkp.o
  .ARM.attributes
@@ -341,7 +337,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_spi.o
  .debug_macro   0x00000000      0x2be build/platform/spl/src/stm32f10x_spi.o
  .debug_line    0x00000000      0x730 build/platform/spl/src/stm32f10x_spi.o
- .debug_str     0x00000000    0x3a924 build/platform/spl/src/stm32f10x_spi.o
+ .debug_str     0x00000000    0x3a947 build/platform/spl/src/stm32f10x_spi.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_spi.o
  .debug_frame   0x00000000      0x1b0 build/platform/spl/src/stm32f10x_spi.o
  .ARM.attributes
@@ -454,7 +450,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_adc.o
  .debug_macro   0x00000000      0x2df build/platform/spl/src/stm32f10x_adc.o
  .debug_line    0x00000000      0xa85 build/platform/spl/src/stm32f10x_adc.o
- .debug_str     0x00000000    0x3b6ea build/platform/spl/src/stm32f10x_adc.o
+ .debug_str     0x00000000    0x3b70d build/platform/spl/src/stm32f10x_adc.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_adc.o
  .debug_frame   0x00000000      0x294 build/platform/spl/src/stm32f10x_adc.o
  .ARM.attributes
@@ -508,7 +504,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_iwdg.o
  .debug_macro   0x00000000       0x5e build/platform/spl/src/stm32f10x_iwdg.o
  .debug_line    0x00000000      0x261 build/platform/spl/src/stm32f10x_iwdg.o
- .debug_str     0x00000000    0x38faa build/platform/spl/src/stm32f10x_iwdg.o
+ .debug_str     0x00000000    0x38fcd build/platform/spl/src/stm32f10x_iwdg.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_iwdg.o
  .debug_frame   0x00000000       0x70 build/platform/spl/src/stm32f10x_iwdg.o
  .ARM.attributes
@@ -560,7 +556,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/misc.o
  .debug_macro   0x00000000       0x85 build/platform/spl/src/misc.o
  .debug_line    0x00000000      0x2d6 build/platform/spl/src/misc.o
- .debug_str     0x00000000    0x391f2 build/platform/spl/src/misc.o
+ .debug_str     0x00000000    0x39215 build/platform/spl/src/misc.o
  .comment       0x00000000       0x47 build/platform/spl/src/misc.o
  .debug_frame   0x00000000       0x6c build/platform/spl/src/misc.o
  .ARM.attributes
@@ -629,7 +625,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_cec.o
  .debug_macro   0x00000000       0xc2 build/platform/spl/src/stm32f10x_cec.o
  .debug_line    0x00000000      0x410 build/platform/spl/src/stm32f10x_cec.o
- .debug_str     0x00000000    0x395cd build/platform/spl/src/stm32f10x_cec.o
+ .debug_str     0x00000000    0x395f0 build/platform/spl/src/stm32f10x_cec.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_cec.o
  .debug_frame   0x00000000       0xfc build/platform/spl/src/stm32f10x_cec.o
  .ARM.attributes
@@ -687,7 +683,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_wwdg.o
  .debug_macro   0x00000000       0x2e build/platform/spl/src/stm32f10x_wwdg.o
  .debug_line    0x00000000      0x2de build/platform/spl/src/stm32f10x_wwdg.o
- .debug_str     0x00000000    0x38ef0 build/platform/spl/src/stm32f10x_wwdg.o
+ .debug_str     0x00000000    0x38f13 build/platform/spl/src/stm32f10x_wwdg.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_wwdg.o
  .debug_frame   0x00000000       0xa4 build/platform/spl/src/stm32f10x_wwdg.o
  .ARM.attributes
@@ -906,7 +902,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_tim.o
  .debug_macro   0x00000000      0x70b build/platform/spl/src/stm32f10x_tim.o
  .debug_line    0x00000000     0x1d7b build/platform/spl/src/stm32f10x_tim.o
- .debug_str     0x00000000    0x3e05d build/platform/spl/src/stm32f10x_tim.o
+ .debug_str     0x00000000    0x3e080 build/platform/spl/src/stm32f10x_tim.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_tim.o
  .debug_frame   0x00000000      0x6a4 build/platform/spl/src/stm32f10x_tim.o
  .ARM.attributes
@@ -1006,7 +1002,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_usart.o
  .debug_macro   0x00000000      0x21a build/platform/spl/src/stm32f10x_usart.o
  .debug_line    0x00000000      0x8d8 build/platform/spl/src/stm32f10x_usart.o
- .debug_str     0x00000000    0x3a867 build/platform/spl/src/stm32f10x_usart.o
+ .debug_str     0x00000000    0x3a88a build/platform/spl/src/stm32f10x_usart.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_usart.o
  .debug_frame   0x00000000      0x22c build/platform/spl/src/stm32f10x_usart.o
  .ARM.attributes
@@ -1058,7 +1054,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x3e2 build/platform/spl/src/stm32f10x_crc.o
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_crc.o
  .debug_line    0x00000000      0x283 build/platform/spl/src/stm32f10x_crc.o
- .debug_str     0x00000000    0x38bb4 build/platform/spl/src/stm32f10x_crc.o
+ .debug_str     0x00000000    0x38bd7 build/platform/spl/src/stm32f10x_crc.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_crc.o
  .debug_frame   0x00000000       0x70 build/platform/spl/src/stm32f10x_crc.o
  .ARM.attributes
@@ -1156,7 +1152,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_flash.o
  .debug_macro   0x00000000      0x2c9 build/platform/spl/src/stm32f10x_flash.o
  .debug_line    0x00000000     0x1f3f build/platform/spl/src/stm32f10x_flash.o
- .debug_str     0x00000000    0x3a8d1 build/platform/spl/src/stm32f10x_flash.o
+ .debug_str     0x00000000    0x3a8f4 build/platform/spl/src/stm32f10x_flash.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_flash.o
  .debug_frame   0x00000000      0x1f4 build/platform/spl/src/stm32f10x_flash.o
  .ARM.attributes
@@ -1346,7 +1342,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_sdio.o
  .debug_macro   0x00000000      0x33b build/platform/spl/src/stm32f10x_sdio.o
  .debug_line    0x00000000      0x657 build/platform/spl/src/stm32f10x_sdio.o
- .debug_str     0x00000000    0x3b47b build/platform/spl/src/stm32f10x_sdio.o
+ .debug_str     0x00000000    0x3b49e build/platform/spl/src/stm32f10x_sdio.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_sdio.o
  .debug_frame   0x00000000      0x218 build/platform/spl/src/stm32f10x_sdio.o
  .ARM.attributes
@@ -1453,7 +1449,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_i2c.o
  .debug_macro   0x00000000      0x2ab build/platform/spl/src/stm32f10x_i2c.o
  .debug_line    0x00000000      0x935 build/platform/spl/src/stm32f10x_i2c.o
- .debug_str     0x00000000    0x3b0a6 build/platform/spl/src/stm32f10x_i2c.o
+ .debug_str     0x00000000    0x3b0c9 build/platform/spl/src/stm32f10x_i2c.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_i2c.o
  .debug_frame   0x00000000      0x25c build/platform/spl/src/stm32f10x_i2c.o
  .ARM.attributes
@@ -1513,7 +1509,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_pwr.o
  .debug_macro   0x00000000       0x7c build/platform/spl/src/stm32f10x_pwr.o
  .debug_line    0x00000000      0x349 build/platform/spl/src/stm32f10x_pwr.o
- .debug_str     0x00000000    0x39336 build/platform/spl/src/stm32f10x_pwr.o
+ .debug_str     0x00000000    0x39359 build/platform/spl/src/stm32f10x_pwr.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_pwr.o
  .debug_frame   0x00000000       0xac build/platform/spl/src/stm32f10x_pwr.o
  .ARM.attributes
@@ -1583,7 +1579,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_rtc.o
  .debug_macro   0x00000000       0x52 build/platform/spl/src/stm32f10x_rtc.o
  .debug_line    0x00000000      0x473 build/platform/spl/src/stm32f10x_rtc.o
- .debug_str     0x00000000    0x39027 build/platform/spl/src/stm32f10x_rtc.o
+ .debug_str     0x00000000    0x3904a build/platform/spl/src/stm32f10x_rtc.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_rtc.o
  .debug_frame   0x00000000       0xf0 build/platform/spl/src/stm32f10x_rtc.o
  .ARM.attributes
@@ -1603,12 +1599,16 @@ Discarded input sections
  .text          0x00000000        0x0 build/platform/spl/src/stm32f10x_can.o
  .data          0x00000000        0x0 build/platform/spl/src/stm32f10x_can.o
  .bss           0x00000000        0x0 build/platform/spl/src/stm32f10x_can.o
+ .text.CAN_StructInit
+                0x00000000       0x18 build/platform/spl/src/stm32f10x_can.o
  .text.CAN_SlaveStartBank
                 0x00000000       0x3c build/platform/spl/src/stm32f10x_can.o
  .text.CAN_DBGFreeze
                 0x00000000       0x14 build/platform/spl/src/stm32f10x_can.o
  .text.CAN_TTComModeCmd
                 0x00000000       0x5c build/platform/spl/src/stm32f10x_can.o
+ .text.CAN_Transmit
+                0x00000000       0xb4 build/platform/spl/src/stm32f10x_can.o
  .text.CAN_TransmitStatus
                 0x00000000       0x60 build/platform/spl/src/stm32f10x_can.o
  .text.CAN_CancelTransmit
@@ -1709,7 +1709,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_dac.o
  .debug_macro   0x00000000      0x174 build/platform/spl/src/stm32f10x_dac.o
  .debug_line    0x00000000      0x46a build/platform/spl/src/stm32f10x_dac.o
- .debug_str     0x00000000    0x39e2b build/platform/spl/src/stm32f10x_dac.o
+ .debug_str     0x00000000    0x39e4e build/platform/spl/src/stm32f10x_dac.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_dac.o
  .debug_frame   0x00000000      0x100 build/platform/spl/src/stm32f10x_dac.o
  .ARM.attributes
@@ -1755,7 +1755,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_dbgmcu.o
  .debug_macro   0x00000000       0xa6 build/platform/spl/src/stm32f10x_dbgmcu.o
  .debug_line    0x00000000      0x212 build/platform/spl/src/stm32f10x_dbgmcu.o
- .debug_str     0x00000000    0x3901e build/platform/spl/src/stm32f10x_dbgmcu.o
+ .debug_str     0x00000000    0x39041 build/platform/spl/src/stm32f10x_dbgmcu.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_dbgmcu.o
  .debug_frame   0x00000000       0x40 build/platform/spl/src/stm32f10x_dbgmcu.o
  .ARM.attributes
@@ -1818,7 +1818,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/spl/src/stm32f10x_dma.o
  .debug_macro   0x00000000      0x3a7 build/platform/spl/src/stm32f10x_dma.o
  .debug_line    0x00000000      0x4fc build/platform/spl/src/stm32f10x_dma.o
- .debug_str     0x00000000    0x3b479 build/platform/spl/src/stm32f10x_dma.o
+ .debug_str     0x00000000    0x3b49c build/platform/spl/src/stm32f10x_dma.o
  .comment       0x00000000       0x47 build/platform/spl/src/stm32f10x_dma.o
  .debug_frame   0x00000000       0xc8 build/platform/spl/src/stm32f10x_dma.o
  .ARM.attributes
@@ -1841,6 +1841,8 @@ Discarded input sections
                 0x00000000       0x5c build/platform/spl/src/system_stm32f10x.o
  .rodata.AHBPrescTable
                 0x00000000       0x10 build/platform/spl/src/system_stm32f10x.o
+ .data.SystemCoreClock
+                0x00000000        0x4 build/platform/spl/src/system_stm32f10x.o
  .debug_macro   0x00000000      0xaf6 build/platform/spl/src/system_stm32f10x.o
  .debug_macro   0x00000000       0x57 build/platform/spl/src/system_stm32f10x.o
  .debug_macro   0x00000000      0x523 build/platform/spl/src/system_stm32f10x.o
@@ -1947,7 +1949,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x16 build/platform/debug/syscalls_min.o
  .debug_macro   0x00000000      0x52f build/platform/debug/syscalls_min.o
  .debug_line    0x00000000      0x520 build/platform/debug/syscalls_min.o
- .debug_str     0x00000000     0x9903 build/platform/debug/syscalls_min.o
+ .debug_str     0x00000000     0x9926 build/platform/debug/syscalls_min.o
  .comment       0x00000000       0x47 build/platform/debug/syscalls_min.o
  .debug_frame   0x00000000       0x90 build/platform/debug/syscalls_min.o
  .ARM.attributes
@@ -1991,7 +1993,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x35 build/platform/debug/semihost.o
  .debug_macro   0x00000000      0x1a5 build/platform/debug/semihost.o
  .debug_line    0x00000000      0x23f build/platform/debug/semihost.o
- .debug_str     0x00000000    0x38ef5 build/platform/debug/semihost.o
+ .debug_str     0x00000000    0x38f18 build/platform/debug/semihost.o
  .comment       0x00000000       0x47 build/platform/debug/semihost.o
  .debug_frame   0x00000000       0x2c build/platform/debug/semihost.o
  .ARM.attributes
@@ -2011,12 +2013,9 @@ Discarded input sections
  .text          0x00000000        0x0 build/src/main.o
  .data          0x00000000        0x0 build/src/main.o
  .bss           0x00000000        0x0 build/src/main.o
- .text.Systick_Handler
-                0x00000000       0x10 build/src/main.o
- .text.CAN1_Send_LED_Msg
-                0x00000000       0x24 build/src/main.o
- .text.CAN1_Request_Msg
-                0x00000000       0x1c build/src/main.o
+ .text.delay    0x00000000       0x18 build/src/main.o
+ .bss.TX_Message
+                0x00000000       0x14 build/src/main.o
  .debug_macro   0x00000000      0xaf6 build/src/main.o
  .debug_macro   0x00000000       0x57 build/src/main.o
  .debug_macro   0x00000000      0x523 build/src/main.o
@@ -2098,172 +2097,164 @@ END GROUP
  .isr_vector    0x08000000      0x10c build/platform/bsp/startup_stm32f10x_md.o
                 0x08000000                g_pfnVectors
 
-.text           0x0800010c      0x77a
+.text           0x0800010c      0x676
                 0x0800010c                        _stext = .
  *(.text*)
  .text.GPIO_Init
                 0x0800010c       0xbc build/platform/spl/src/stm32f10x_gpio.o
                 0x0800010c                GPIO_Init
+ .text.GPIO_SetBits
+                0x080001c8        0x4 build/platform/spl/src/stm32f10x_gpio.o
+                0x080001c8                GPIO_SetBits
+ .text.GPIO_ResetBits
+                0x080001cc        0x4 build/platform/spl/src/stm32f10x_gpio.o
+                0x080001cc                GPIO_ResetBits
  .text.RCC_APB2PeriphClockCmd
-                0x080001c8       0x18 build/platform/spl/src/stm32f10x_rcc.o
-                0x080001c8                RCC_APB2PeriphClockCmd
+                0x080001d0       0x18 build/platform/spl/src/stm32f10x_rcc.o
+                0x080001d0                RCC_APB2PeriphClockCmd
  .text.RCC_APB1PeriphClockCmd
-                0x080001e0       0x18 build/platform/spl/src/stm32f10x_rcc.o
-                0x080001e0                RCC_APB1PeriphClockCmd
+                0x080001e8       0x18 build/platform/spl/src/stm32f10x_rcc.o
+                0x080001e8                RCC_APB1PeriphClockCmd
  .text.RCC_APB1PeriphResetCmd
-                0x080001f8       0x18 build/platform/spl/src/stm32f10x_rcc.o
-                0x080001f8                RCC_APB1PeriphResetCmd
+                0x08000200       0x18 build/platform/spl/src/stm32f10x_rcc.o
+                0x08000200                RCC_APB1PeriphResetCmd
  .text.CAN_DeInit
-                0x08000210       0x3c build/platform/spl/src/stm32f10x_can.o
-                0x08000210                CAN_DeInit
+                0x08000218       0x3c build/platform/spl/src/stm32f10x_can.o
+                0x08000218                CAN_DeInit
  .text.CAN_Init
-                0x0800024c       0xe4 build/platform/spl/src/stm32f10x_can.o
-                0x0800024c                CAN_Init
+                0x08000254       0xe4 build/platform/spl/src/stm32f10x_can.o
+                0x08000254                CAN_Init
  .text.CAN_FilterInit
-                0x08000330      0x104 build/platform/spl/src/stm32f10x_can.o
-                0x08000330                CAN_FilterInit
- .text.CAN_StructInit
-                0x08000434       0x18 build/platform/spl/src/stm32f10x_can.o
-                0x08000434                CAN_StructInit
- .text.CAN_Transmit
-                0x0800044c       0xb4 build/platform/spl/src/stm32f10x_can.o
-                0x0800044c                CAN_Transmit
+                0x08000338      0x104 build/platform/spl/src/stm32f10x_can.o
+                0x08000338                CAN_FilterInit
  .text.CAN_Receive
-                0x08000500       0xc4 build/platform/spl/src/stm32f10x_can.o
-                0x08000500                CAN_Receive
+                0x0800043c       0xc4 build/platform/spl/src/stm32f10x_can.o
+                0x0800043c                CAN_Receive
  .text.CAN_MessagePending
-                0x080005c4       0x18 build/platform/spl/src/stm32f10x_can.o
-                0x080005c4                CAN_MessagePending
+                0x08000500       0x18 build/platform/spl/src/stm32f10x_can.o
+                0x08000500                CAN_MessagePending
  .text.SystemInit
-                0x080005dc       0xfc build/platform/spl/src/system_stm32f10x.o
-                0x080005dc                SystemInit
- .text.Systick_Init
-                0x080006d8       0x3c build/src/main.o
-                0x080006d8                Systick_Init
- .text.CAN1_Init
-                0x08000714       0x84 build/src/main.o
-                0x08000714                CAN1_Init
+                0x08000518       0xfc build/platform/spl/src/system_stm32f10x.o
+                0x08000518                SystemInit
+ .text.CAN_Receive_Init
+                0x08000614       0x80 build/src/main.o
+                0x08000614                CAN_Receive_Init
+ .text.CAN_LEDInit
+                0x08000694       0x2c build/src/main.o
+                0x08000694                CAN_LEDInit
  .text.startup.main
-                0x08000798       0xa8 build/src/main.o
-                0x08000798                main
+                0x080006c0       0x7c build/src/main.o
+                0x080006c0                main
  .text.Reset_Handler
-                0x08000840       0x44 build/platform/bsp/startup_stm32f10x_md.o
-                0x08000840                Reset_Handler
+                0x0800073c       0x44 build/platform/bsp/startup_stm32f10x_md.o
+                0x0800073c                Reset_Handler
  .text.Default_Handler
-                0x08000884        0x2 build/platform/bsp/startup_stm32f10x_md.o
-                0x08000884                EXTI2_IRQHandler
-                0x08000884                DebugMon_Handler
-                0x08000884                TIM1_CC_IRQHandler
-                0x08000884                HardFault_Handler
-                0x08000884                SysTick_Handler
-                0x08000884                PVD_IRQHandler
-                0x08000884                PendSV_Handler
-                0x08000884                NMI_Handler
-                0x08000884                EXTI3_IRQHandler
-                0x08000884                EXTI0_IRQHandler
-                0x08000884                I2C2_EV_IRQHandler
-                0x08000884                UsageFault_Handler
-                0x08000884                ADC1_2_IRQHandler
-                0x08000884                SPI1_IRQHandler
-                0x08000884                TAMPER_IRQHandler
-                0x08000884                DMA1_Channel4_IRQHandler
-                0x08000884                USART3_IRQHandler
-                0x08000884                RTC_IRQHandler
-                0x08000884                DMA1_Channel7_IRQHandler
-                0x08000884                CAN1_RX1_IRQHandler
-                0x08000884                TIM4_IRQHandler
-                0x08000884                I2C1_EV_IRQHandler
-                0x08000884                DMA1_Channel6_IRQHandler
-                0x08000884                TIM3_IRQHandler
-                0x08000884                RCC_IRQHandler
-                0x08000884                TIM1_TRG_COM_IRQHandler
-                0x08000884                DMA1_Channel1_IRQHandler
-                0x08000884                Default_Handler
-                0x08000884                EXTI15_10_IRQHandler
-                0x08000884                EXTI9_5_IRQHandler
-                0x08000884                SPI2_IRQHandler
-                0x08000884                MemManage_Handler
-                0x08000884                SVC_Handler
-                0x08000884                DMA1_Channel5_IRQHandler
-                0x08000884                EXTI4_IRQHandler
-                0x08000884                USB_LP_CAN1_RX0_IRQHandler
-                0x08000884                USB_HP_CAN1_TX_IRQHandler
-                0x08000884                DMA1_Channel3_IRQHandler
-                0x08000884                TIM1_UP_IRQHandler
-                0x08000884                WWDG_IRQHandler
-                0x08000884                TIM2_IRQHandler
-                0x08000884                TIM1_BRK_IRQHandler
-                0x08000884                EXTI1_IRQHandler
-                0x08000884                RTCAlarm_IRQHandler
-                0x08000884                USART2_IRQHandler
-                0x08000884                I2C2_ER_IRQHandler
-                0x08000884                DMA1_Channel2_IRQHandler
-                0x08000884                CAN1_SCE_IRQHandler
-                0x08000884                FLASH_IRQHandler
-                0x08000884                BusFault_Handler
-                0x08000884                USART1_IRQHandler
-                0x08000884                I2C1_ER_IRQHandler
-                0x08000884                USBWakeUp_IRQHandler
+                0x08000780        0x2 build/platform/bsp/startup_stm32f10x_md.o
+                0x08000780                EXTI2_IRQHandler
+                0x08000780                DebugMon_Handler
+                0x08000780                TIM1_CC_IRQHandler
+                0x08000780                HardFault_Handler
+                0x08000780                SysTick_Handler
+                0x08000780                PVD_IRQHandler
+                0x08000780                PendSV_Handler
+                0x08000780                NMI_Handler
+                0x08000780                EXTI3_IRQHandler
+                0x08000780                EXTI0_IRQHandler
+                0x08000780                I2C2_EV_IRQHandler
+                0x08000780                UsageFault_Handler
+                0x08000780                ADC1_2_IRQHandler
+                0x08000780                SPI1_IRQHandler
+                0x08000780                TAMPER_IRQHandler
+                0x08000780                DMA1_Channel4_IRQHandler
+                0x08000780                USART3_IRQHandler
+                0x08000780                RTC_IRQHandler
+                0x08000780                DMA1_Channel7_IRQHandler
+                0x08000780                CAN1_RX1_IRQHandler
+                0x08000780                TIM4_IRQHandler
+                0x08000780                I2C1_EV_IRQHandler
+                0x08000780                DMA1_Channel6_IRQHandler
+                0x08000780                TIM3_IRQHandler
+                0x08000780                RCC_IRQHandler
+                0x08000780                TIM1_TRG_COM_IRQHandler
+                0x08000780                DMA1_Channel1_IRQHandler
+                0x08000780                Default_Handler
+                0x08000780                EXTI15_10_IRQHandler
+                0x08000780                EXTI9_5_IRQHandler
+                0x08000780                SPI2_IRQHandler
+                0x08000780                MemManage_Handler
+                0x08000780                SVC_Handler
+                0x08000780                DMA1_Channel5_IRQHandler
+                0x08000780                EXTI4_IRQHandler
+                0x08000780                USB_LP_CAN1_RX0_IRQHandler
+                0x08000780                USB_HP_CAN1_TX_IRQHandler
+                0x08000780                DMA1_Channel3_IRQHandler
+                0x08000780                TIM1_UP_IRQHandler
+                0x08000780                WWDG_IRQHandler
+                0x08000780                TIM2_IRQHandler
+                0x08000780                TIM1_BRK_IRQHandler
+                0x08000780                EXTI1_IRQHandler
+                0x08000780                RTCAlarm_IRQHandler
+                0x08000780                USART2_IRQHandler
+                0x08000780                I2C2_ER_IRQHandler
+                0x08000780                DMA1_Channel2_IRQHandler
+                0x08000780                CAN1_SCE_IRQHandler
+                0x08000780                FLASH_IRQHandler
+                0x08000780                BusFault_Handler
+                0x08000780                USART1_IRQHandler
+                0x08000780                I2C1_ER_IRQHandler
+                0x08000780                USBWakeUp_IRQHandler
  *(.rodata*)
  *(.glue_7)
- .glue_7        0x08000886        0x0 linker stubs
+ .glue_7        0x08000782        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x08000886        0x0 linker stubs
+ .glue_7t       0x08000782        0x0 linker stubs
 
-.vfp11_veneer   0x08000888        0x0
- .vfp11_veneer  0x08000888        0x0 linker stubs
+.vfp11_veneer   0x08000784        0x0
+ .vfp11_veneer  0x08000784        0x0 linker stubs
 
-.v4_bx          0x08000888        0x0
- .v4_bx         0x08000888        0x0 linker stubs
+.v4_bx          0x08000784        0x0
+ .v4_bx         0x08000784        0x0 linker stubs
 
-.iplt           0x08000888        0x0
- .iplt          0x08000888        0x0 build/platform/spl/src/stm32f10x_can.o
+.iplt           0x08000784        0x0
+ .iplt          0x08000784        0x0 build/platform/spl/src/stm32f10x_can.o
 
-.rel.dyn        0x08000888        0x0
- .rel.iplt      0x08000888        0x0 build/platform/spl/src/stm32f10x_can.o
-                0x08000888                        . = ALIGN (0x4)
+.rel.dyn        0x08000784        0x0
+ .rel.iplt      0x08000784        0x0 build/platform/spl/src/stm32f10x_can.o
+                0x08000784                        . = ALIGN (0x4)
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x08000888                        . = ALIGN (0x4)
-                0x08000888                        __exidx_start = .
+                0x08000784                        . = ALIGN (0x4)
+                0x08000784                        __exidx_start = .
 
 .ARM.exidx
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-                0x08000888                        __exidx_end = .
-                0x08000888                        . = ALIGN (0x4)
-                0x08000888                        _etext = .
+                0x08000784                        __exidx_end = .
+                0x08000784                        . = ALIGN (0x4)
+                0x08000784                        _etext = .
 
-.data           0x20000000        0x4 load address 0x08000888
+.data           0x20000000        0x0 load address 0x08000784
                 0x20000000                        . = ALIGN (0x4)
                 0x20000000                        _sdata = .
  *(.data*)
- .data.SystemCoreClock
-                0x20000000        0x4 build/platform/spl/src/system_stm32f10x.o
-                0x20000000                SystemCoreClock
  *(.data.*)
-                0x20000004                        . = ALIGN (0x4)
-                0x20000004                        _edata = .
-                0x08000888                        _sidata = LOADADDR (.data)
+                0x20000000                        . = ALIGN (0x4)
+                0x20000000                        _edata = .
+                0x08000784                        _sidata = LOADADDR (.data)
 
-.igot.plt       0x20000004        0x0 load address 0x0800088c
- .igot.plt      0x20000004        0x0 build/platform/spl/src/stm32f10x_can.o
+.igot.plt       0x20000000        0x0
+ .igot.plt      0x20000000        0x0 build/platform/spl/src/stm32f10x_can.o
 
-.bss            0x20000004       0x2c load address 0x0800088c
-                0x20000004                        . = ALIGN (0x4)
-                0x20000004                        _sbss = .
+.bss            0x20000000       0x14
+                0x20000000                        . = ALIGN (0x4)
+                0x20000000                        _sbss = .
  *(.bss*)
- .bss.Tick_ms   0x20000004        0x4 build/src/main.o
-                0x20000004                Tick_ms
  .bss.RX_Message
-                0x20000008       0x14 build/src/main.o
-                0x20000008                RX_Message
- .bss.TX_Message
-                0x2000001c       0x14 build/src/main.o
-                0x2000001c                TX_Message
+                0x20000000       0x14 build/src/main.o
+                0x20000000                RX_Message
  *(COMMON)
-                0x20000030                        . = ALIGN (0x4)
-                0x20000030                        _ebss = .
+                0x20000014                        . = ALIGN (0x4)
+                0x20000014                        _ebss = .
 
 /DISCARD/
  *(.note*)
@@ -2286,22 +2277,22 @@ LOAD linker stubs
  .ARM.attributes
                 0x000000e1       0x21 build/platform/bsp/startup_stm32f10x_md.o
 
-.debug_info     0x00000000     0x35f8
+.debug_info     0x00000000     0x300b
  .debug_info    0x00000000      0x89d build/platform/spl/src/stm32f10x_gpio.o
  .debug_info    0x0000089d      0x92e build/platform/spl/src/stm32f10x_rcc.o
  .debug_info    0x000011cb      0xfb3 build/platform/spl/src/stm32f10x_can.o
  .debug_info    0x0000217e      0x4b1 build/platform/spl/src/system_stm32f10x.o
- .debug_info    0x0000262f      0xfc9 build/src/main.o
+ .debug_info    0x0000262f      0x9dc build/src/main.o
 
-.debug_abbrev   0x00000000      0xd23
+.debug_abbrev   0x00000000      0xc05
  .debug_abbrev  0x00000000      0x269 build/platform/spl/src/stm32f10x_gpio.o
  .debug_abbrev  0x00000269      0x29f build/platform/spl/src/stm32f10x_rcc.o
  .debug_abbrev  0x00000508      0x301 build/platform/spl/src/stm32f10x_can.o
  .debug_abbrev  0x00000809      0x1b2 build/platform/spl/src/system_stm32f10x.o
- .debug_abbrev  0x000009bb      0x368 build/src/main.o
+ .debug_abbrev  0x000009bb      0x24a build/src/main.o
 
 .debug_loclists
-                0x00000000     0x125f
+                0x00000000     0x11b0
  .debug_loclists
                 0x00000000      0x47b build/platform/spl/src/stm32f10x_gpio.o
  .debug_loclists
@@ -2311,9 +2302,9 @@ LOAD linker stubs
  .debug_loclists
                 0x000010e4       0x8e build/platform/spl/src/system_stm32f10x.o
  .debug_loclists
-                0x00001172       0xed build/src/main.o
+                0x00001172       0x3e build/src/main.o
 
-.debug_aranges  0x00000000      0x308
+.debug_aranges  0x00000000      0x2f8
  .debug_aranges
                 0x00000000       0xa8 build/platform/spl/src/stm32f10x_gpio.o
  .debug_aranges
@@ -2323,10 +2314,10 @@ LOAD linker stubs
  .debug_aranges
                 0x00000298       0x28 build/platform/spl/src/system_stm32f10x.o
  .debug_aranges
-                0x000002c0       0x48 build/src/main.o
+                0x000002c0       0x38 build/src/main.o
 
 .debug_rnglists
-                0x00000000      0x2a0
+                0x00000000      0x25d
  .debug_rnglists
                 0x00000000       0x7c build/platform/spl/src/stm32f10x_gpio.o
  .debug_rnglists
@@ -2336,9 +2327,9 @@ LOAD linker stubs
  .debug_rnglists
                 0x0000020c       0x2b build/platform/spl/src/system_stm32f10x.o
  .debug_rnglists
-                0x00000237       0x69 build/src/main.o
+                0x00000237       0x26 build/src/main.o
 
-.debug_macro    0x00000000     0xb099
+.debug_macro    0x00000000     0xb093
  .debug_macro   0x00000000       0xfc build/platform/spl/src/stm32f10x_gpio.o
  .debug_macro   0x000000fc      0xaf6 build/platform/spl/src/stm32f10x_gpio.o
  .debug_macro   0x00000bf2       0x57 build/platform/spl/src/stm32f10x_gpio.o
@@ -2355,31 +2346,31 @@ LOAD linker stubs
  .debug_macro   0x0000a697      0x107 build/platform/spl/src/stm32f10x_can.o
  .debug_macro   0x0000a79e      0x3c9 build/platform/spl/src/stm32f10x_can.o
  .debug_macro   0x0000ab67       0xac build/platform/spl/src/system_stm32f10x.o
- .debug_macro   0x0000ac13       0xb7 build/src/main.o
- .debug_macro   0x0000acca      0x3cf build/src/main.o
+ .debug_macro   0x0000ac13       0xb1 build/src/main.o
+ .debug_macro   0x0000acc4      0x3cf build/src/main.o
 
-.debug_line     0x00000000     0x26fc
+.debug_line     0x00000000     0x25b9
  .debug_line    0x00000000      0x720 build/platform/spl/src/stm32f10x_gpio.o
  .debug_line    0x00000720      0x909 build/platform/spl/src/stm32f10x_rcc.o
  .debug_line    0x00001029      0xe5b build/platform/spl/src/stm32f10x_can.o
  .debug_line    0x00001e84      0x400 build/platform/spl/src/system_stm32f10x.o
- .debug_line    0x00002284      0x478 build/src/main.o
+ .debug_line    0x00002284      0x335 build/src/main.o
 
-.debug_str      0x00000000    0x3bee8
- .debug_str     0x00000000    0x3bee8 build/platform/spl/src/stm32f10x_gpio.o
-                              0x390d7 (size before relaxing)
- .debug_str     0x0003bee8        0x0 build/platform/spl/src/stm32f10x_rcc.o
-                              0x396a6 (size before relaxing)
- .debug_str     0x0003bee8        0x0 build/platform/spl/src/stm32f10x_can.o
-                              0x3ad15 (size before relaxing)
- .debug_str     0x0003bee8        0x0 build/platform/spl/src/system_stm32f10x.o
-                              0x38c85 (size before relaxing)
- .debug_str     0x0003bee8        0x0 build/src/main.o
-                              0x3ae38 (size before relaxing)
+.debug_str      0x00000000    0x3bb58
+ .debug_str     0x00000000    0x3bb58 build/platform/spl/src/stm32f10x_gpio.o
+                              0x390fa (size before relaxing)
+ .debug_str     0x0003bb58        0x0 build/platform/spl/src/stm32f10x_rcc.o
+                              0x396c9 (size before relaxing)
+ .debug_str     0x0003bb58        0x0 build/platform/spl/src/stm32f10x_can.o
+                              0x3ad38 (size before relaxing)
+ .debug_str     0x0003bb58        0x0 build/platform/spl/src/system_stm32f10x.o
+                              0x38ca8 (size before relaxing)
+ .debug_str     0x0003bb58        0x0 build/src/main.o
+                              0x3aa1c (size before relaxing)
 
-.debug_frame    0x00000000      0x638
+.debug_frame    0x00000000      0x618
  .debug_frame   0x00000000      0x190 build/platform/spl/src/stm32f10x_gpio.o
  .debug_frame   0x00000190      0x21c build/platform/spl/src/stm32f10x_rcc.o
  .debug_frame   0x000003ac      0x1bc build/platform/spl/src/stm32f10x_can.o
  .debug_frame   0x00000568       0x3c build/platform/spl/src/system_stm32f10x.o
- .debug_frame   0x000005a4       0x94 build/src/main.o
+ .debug_frame   0x000005a4       0x74 build/src/main.o

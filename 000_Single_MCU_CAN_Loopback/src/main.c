@@ -145,9 +145,9 @@ int main(void)
             /* ví dụ: g_rx_can_data[0] ... g_rx_can_data[7] */
         }
 
-        Delay(50000000);
+        Delay(20000000);
 
         GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-        Delay(50000000);
+        Delay(20000000);
     }
 }
