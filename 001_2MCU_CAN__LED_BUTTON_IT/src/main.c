@@ -3,12 +3,12 @@
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
 #include "misc.h"
-
+#include "stm32f10x_exti.h"
 
 CanTxMsg TX_Message;
 CanRxMsg RX_Message;
 
-//#define NODE1
+#define NODE1
 
 void delay(uint32_t ms)
 {
@@ -65,13 +65,103 @@ void CAN_Send_Init(void)
 void CAN_ButtonInit(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
+    EXTI_InitTypeDef EXTI_InitStruct;
+    NVIC_InitTypeDef NVIC_InitStruct;
 
+    // Bật clock
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
+    // Cấu hình chân
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_10 | GPIO_Pin_11;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    // Ánh xạ GPIO sang EXTI
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource10);
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource11);
+
+    // Cấu hình EXTI (FE)
+    EXTI_InitStruct.EXTI_Line = EXTI_Line0 | EXTI_Line1 | EXTI_Line10 | EXTI_Line11; 
+    EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStruct.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStruct.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStruct);
+
+    // NVIC cho EXTI0 (PB0)
+    NVIC_InitStruct.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStruct);
+
+    // NVIC cho EXTI1 (PB1)
+    NVIC_InitStruct.NVIC_IRQChannel = EXTI1_IRQn;
+    NVIC_Init(&NVIC_InitStruct);
+
+    // NVIC cho EXTI10 & EXTI11 (Dùng chung EXTI15_10_IRQn)
+    NVIC_InitStruct.NVIC_IRQChannel = EXTI15_10_IRQn;
+    NVIC_Init(&NVIC_InitStruct);
+}
+
+void EXTI0_IRQHandler(void)
+{
+    if(EXTI_GetITStatus(EXTI_Line0) != RESET)
+    {
+        delay(20);
+        if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == Bit_RESET)
+        {
+            TX_Message.StdId = 0x123;
+            TX_Message.Data[0] = 1;
+            CAN_Transmit(CAN1, &TX_Message);
+        }
+        EXTI_ClearITPendingBit(EXTI_Line0);
+    }
+}
+
+void EXTI1_IRQHandler(void)
+{
+    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
+    {
+        delay(20);
+        if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == Bit_RESET)
+        {
+            TX_Message.StdId = 0x456;
+            TX_Message.Data[0] = 1;
+            CAN_Transmit(CAN1, &TX_Message);
+        }
+        EXTI_ClearITPendingBit(EXTI_Line1);
+    }
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    if(EXTI_GetITStatus(EXTI_Line10) != RESET)
+    {
+        delay(20);
+        if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_10) == Bit_RESET)
+        {
+            TX_Message.StdId = 0x123;
+            TX_Message.Data[0] = 2;
+            CAN_Transmit(CAN1, &TX_Message);
+        }
+        EXTI_ClearITPendingBit(EXTI_Line10);
+    }
+
+    if(EXTI_GetITStatus(EXTI_Line11) != RESET)
+    {
+        delay(20);
+        if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_11) == Bit_RESET)
+        {
+            TX_Message.StdId = 0x456;
+            TX_Message.Data[0] = 2;
+            CAN_Transmit(CAN1, &TX_Message);
+        }
+        EXTI_ClearITPendingBit(EXTI_Line11);
+    }
 }
 
 #else
@@ -157,6 +247,37 @@ void CAN_LEDInit(void)
     GPIO_ResetBits(GPIOA, GPIO_Pin_0 | GPIO_Pin_5);
 }
 
+void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    if(CAN_GetITStatus(CAN1, CAN_IT_FMP0) != RESET)
+    {
+        CAN_Receive(CAN1, CAN_FIFO0, &RX_Message);
+
+        if(RX_Message.StdId == 0x123)
+        {
+            if(RX_Message.Data[0] == 1)
+            {
+                GPIO_SetBits(GPIOA, GPIO_Pin_5);
+            }
+            else if(RX_Message.Data[0] == 2)
+            {
+                GPIO_SetBits(GPIOA, GPIO_Pin_0);
+            }
+        }
+        else if(RX_Message.StdId == 0x456)
+        {
+            if(RX_Message.Data[0] == 1)
+            {
+                GPIO_ResetBits(GPIOA, GPIO_Pin_5);
+            }
+            else if(RX_Message.Data[0] == 2)
+            {
+                GPIO_ResetBits(GPIOA, GPIO_Pin_0);
+            }
+        }
+        CAN_ClearITPendingBit(CAN1, CAN_IT_FMP0);
+    }
+}
 #endif
 
 
