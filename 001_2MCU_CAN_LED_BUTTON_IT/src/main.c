@@ -301,7 +301,7 @@ int main(void)
 
     while(1)
     {
-        // CPU rảnh hoặc có thể đưa vào chế độ Low-power (__WFI();)
+        // CPU rảnh
     }
 
 #else
@@ -311,7 +311,7 @@ int main(void)
 
     while(1)
     {
-        // Việc nhận và bật tắt LED diễn ra tự động trong USB_LP_CAN1_RX0_IRQHandler
+    
     }
 #endif
 }
