@@ -12,7 +12,7 @@ CanRxMsg RX_Message;
 
 void delay(uint32_t ms)
 {
-    for(uint32_t i = 0; i < ms * 4000; i ++)
+    for(uint32_t i = 0; i < ms*4000; i++)
     {
         __NOP();
     }
