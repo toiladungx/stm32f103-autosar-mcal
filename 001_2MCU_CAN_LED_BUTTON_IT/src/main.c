@@ -8,7 +8,7 @@
 CanTxMsg TX_Message;
 CanRxMsg RX_Message;
 
-#define NODE1
+//#define NODE1
 
 void delay(uint32_t ms)
 {
@@ -311,7 +311,7 @@ int main(void)
 
     while(1)
     {
-    
+        // CPU rảnh
     }
 #endif
 }
