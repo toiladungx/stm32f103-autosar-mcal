@@ -1,0 +1,39 @@
+STM32F103_AUTOSAR_MCAL/
+│
+├── .vscode/
+│
+├── BSW/
+│   ├── Common/
+│   │   └── include/
+│   │       └── Std_Types.h
+│   │
+│   ├── ECU_Abstraction/
+│   │   └── Communication/
+│   │       ├── CanIf/
+│   │       └── LinIf/
+│   │
+│   ├── MCAL/
+│   │   ├── Adc/
+│   │   ├── Can/
+│   │   ├── Dio/
+│   │   ├── Lin/
+│   │   ├── Port/
+│   │   └── Pwm/
+│   │
+│   └── Services/
+│       ├── Communication/
+│       └── SystemServices/
+│           └── Det/
+│
+├── platform/
+│   ├── bsp/
+│   ├── debug/
+│   ├── spl/
+│   └── CMakeLists.txt
+│
+├── scripts/
+├── src/
+│   └── main.c
+│
+├── .gitignore
+└── Makefile
