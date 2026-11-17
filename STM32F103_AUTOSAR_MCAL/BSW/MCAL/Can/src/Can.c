@@ -173,34 +173,215 @@ void Can_Init(void)
 
 
 
-
-/* =========================================================
- * Can_Write – API: Gửi CAN PDU
- * ---------------------------------------------------------
- * Luồng xử lý:
- *   1. Kiểm tra điều kiện tiên quyết (init, param không NULL)
- *   2. Kiểm tra slot TX tương ứng có rảnh không
- *   3. Chuyển đổi Can_PduType (AUTOSAR) -> CanTxMsg (SPL)
- *   4. Gọi CAN_Transmit() của SPL để nạp vào mailbox
- *   5. Lưu thông tin để callback khi TX hoàn tất
- *
- * Mapping kiểu dữ liệu:
- *   ┌───────────────────────┬─────────────────────────┐
- *   │ Can_PduType (AUTOSAR) │     CanTxMsg (SPL)      │
- *   ├───────────────────────┼─────────────────────────┤
- *   │ id ≤ 0x7FF            │ StdId + CAN_Id_Standard │
- *   │ id > 0x7FF            │ ExtId + CAN_Id_Extended │
- *   │ length                │ DLC                     │
- *   │ sdu[i]                │ Data[i]                 │
- *   └───────────────────────┴─────────────────────────┘
- * =========================================================*/
+/* ===========================================================
+ * Can_Write – Nhận PDU từ CanIf và nạp vào Mailbox phần cứng
+ * ===========================================================*/
 Can_ReturnType Can_Write(Can_HwHandleType Hth, const Can_PduType* PduInfo)
 {
+    CanTxMsg txMsg;
+    uint8 slot;
+    uint8 mailBox;
+
     //1. Kiểm tra điều kiện
-    if(!s_inited || (PduInfo == NULL) || (PduInfo->sdu == NULL))
+    if((s_inited == FALSE) || (PduInfo == NULL) || (PduInfo->sdu == NULL))
     {
         return CAN_NOT_OK;
     }
 
-    //2. Giới hạn chỉ số slot 
+    //2. Kiểm tra tính hợp lệ của kênh truyền (Hth) và độ dài dữ liệu (DLC)
+    if((Hth >= CAN_TX_SLOTS) || (PduInfo->length > 8u))
+    {
+        return CAN_NOT_OK;
+    }
+
+    //3. Kiểm tra slot tương ứng có đang bận truyền gói cũ không
+    slot = (uint8)Hth;
+    if(s_txPending[slot] == TRUE)
+    {
+        return CAN_BUSY;
+    }
+
+    //4. Chuyển đổi dữ liệu từ Can_PduType (AUTOSAR) -> CanTXMsg (SPL)
+    // CanTXMsg là cấu trúc mà hàm CAN_Transmit() của SPL yêu cầu
+    txMsg.DLC = PduInfo->length;
+    txMsg.RTR = CAN_RTR_Data;
+
+    if(PduInfo->id > 0x7FFu)    //11bit: 2^11-1 = 2047 = 0x7ff
+    {
+        txMsg.IDE   = CAN_Id_Extended;
+        txMsg.ExtId = PduInfo->id & 0x1FFFFFFFu;
+        txMsg.StdId = 0u;
+    }else{
+        txMsg.IDE   = CAN_Id_Standard;
+        txMsg.ExtId = PduInfo->id & 0x7FFu;
+        txMsg.StdId = 0u;
+    }
+
+    for(uint8 i = 0; i < txMsg.DLC; i++)
+    {
+        txMsg.Data[i] = PduInfo->sdu[i];
+    }
+
+    //5. Nạp frame vào mailbox phần cứng của bxCAN
+    mailBox = CAN_Transmit(CAN_PERIPH, &txMsg);
+    if(mailBox == CAN_TxStatus_NoMailBox)
+    {
+        return CAN_BUSY;
+    }
+
+    //6. Lưu thông tin gói tin để xác nhận (TxConfirmation) khi truyền xong
+    s_swPduHandle[slot] = PduInfo->swPduHandle;
+    s_txMailbox[slot]   = mailBox;
+    s_txPending[slot]   = TRUE;
+
+    return CAN_OK;
+}
+
+
+
+/* ===========================================================
+ * Can_MainFunction_Write – Kiểm tra định kỳ trạng thái truyền TX
+ * ===========================================================*/
+void Can_MainFunction_Write(void)
+{
+    uint8 txStatus;
+    PduIdType pduHandle;
+
+    //1. Thoát ngay nếu driver chưa được khởi tạo
+    if(s_inited == FALSE)
+    {
+        return;
+    }
+
+    //2. Duyệt qua tất cả các slot để kiểm tra kênh nào đang chờ truyền xong
+    for(uint8 i = 0u; i < CAN_TX_SLOTS; i++)
+    {
+        if(s_txPending[i] == TRUE)
+        {
+            //2.1 Kiểm tra bxCAN xem mailbox của slot này đã gửi xong chưa
+            txStatus = CAN_TransmitStatus(CAN_PERIPH, s_txMailbox[i]);
+            
+            //2.2 Xử lý kết quả truyền
+            if(txStatus == CAN_TxStatus_Ok)
+            {
+                // Truyền thành công: lưu lại handle, giải phóng slot rồi báo lên tầng trên (CanIf) qua callback
+                pduHandle = s_swPduHandle[i];
+                s_txPending[i] = FALSE;
+                CanIf_TxConfirmation(pduHandle);
+            }
+            else if(txStatus == CAN_TxStatus_Failed)
+            {
+                // Truyền thất bại (lỗi bus hoặc mất quyền ưu tiên): giải phóng slot để không bị block
+                s_txPending[i] = FALSE;
+            }
+            //else (CAN_TxStatus_Pending -> bxCAN đang truyền, chờ tiếp)
+        }
+    }
+}
+
+
+
+/* ===========================================================
+ * Can_MainFunction_Read – Kiểm tra định kỳ và đọc dữ liệu nhận RX
+ * Trích xuất message từ FIFO0 và FIFO1, sau đó báo lên CanIf_RxIndication
+ * ===========================================================*/
+void Can_MainFunction_Read(void)
+{
+    CanRxMsg rxMsg;
+    PduInfoType pduInfo;
+    Can_IdType canId;
+
+    //1. Thoát ngay nếu driver chưa được khởi tạo
+    if(s_inited == FALSE)
+    {
+        return;
+    }
+
+    //2. Kiểm tra và đọc toàn bộ gói tin đang chờ trong FIFO0
+    while(CAN_MessagePending(CAN_PERIPH, CAN_FIFO0) > 0u)
+    {
+        //2.1 Lấy frame từ FIFO0 phần cứng và giải phóng bộ đệm FIFO
+        CAN_Receive(CAN_PERIPH, CAN_FIFO0, &rxMsg);
+
+        //2.2 Xác định đúng loại CAN ID (Std hay Extd)
+        if(rxMsg.IDE == CAN_Id_Extended)
+        {
+            canId = rxMsg.ExtId;
+        }
+        else
+        {
+            canId = rxMsg.StdId;
+        }
+
+        //2.3 Đóng gói sang cấu trúc PduInfoType của AUTOSAR và báo lên CanIf
+        pduInfo.SduDataPtr = rxMsg.Data;
+        pduInfo.SduLength  = rxMsg.DLC;
+
+        CanIf_RxIndication(canId, &pduInfo);
+    }
+
+    //3. Kiểm tra và đọc toàn bộ gói tin đang chờ trong FIFO1
+    while(CAN_MessagePending(CAN_PERIPH, CAN_FIFO1) > 0u)
+    {
+        //3.1 Lấy frame từ FIFO1 phần cứng và giải phóng bộ đệm FIFO
+        CAN_Receive(CAN_PERIPH, CAN_FIFO1, &rxMsg);
+
+        //3.2 Xác định đúng loại CAN ID (Std hay Extd)
+        if(rxMsg.IDE == CAN_Id_Extended)
+        {
+            canId = rxMsg.ExtId;
+        }
+        else
+        {
+            canId = rxMsg.StdId;
+        }
+
+        //3.3 Đóng gói sang cấu trúc PduInfoType của AUTOSAR và báo lên CanIf
+        pduInfo.SduDataPtr = rxMsg.Data;
+        pduInfo.SduLength  = rxMsg.DLC;
+
+        CanIf_RxIndication(canId, &pduInfo);
+    }
+}
+
+
+
+/* ===========================================================
+ * USB_LP_CAN1_RX0_IRQHandler – Trình phục vụ ngắt nhận FIFO0
+ * ISR này đọc frame và chuyển lên CanIf_RxIndication.
+ * ===========================================================*/
+__attribute__((weak)) void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+    CanRxMsg rxMsg;
+    PduInfoType pduInfo;
+    Can_IdType canId;
+
+    //1. Kiểm tra an toàn
+    if(s_inited == FALSE)
+    {
+        return;
+    }
+
+    //2. Đọc toàn bộ gói tin đang nằm trong FIFO0
+    while(CAN_MessagePending(CAN_PERIPH, CAN_FIFO0) > 0u)
+    {
+        //2.1 Lấy frame từ FIFO0 và tự động xóa cờ pending ngắt FIFO0
+        CAN_Receive(CAN_PERIPH, CAN_FIFO0, &rxMsg);
+
+        //2.2 Xác định đúng loại CAN ID (Std hay Extd)
+        if(rxMsg.IDE == CAN_Id_Extended)
+        {
+            canId = rxMsg.ExtId;
+        }
+        else
+        {
+            canId = rxMsg.StdId;
+        }
+
+        //2.3 Đóng gói sang PduInfoType và báo ngay lên tầng trên (CanIf)
+        pduInfo.SduDataPtr = rxMsg.Data;
+        pduInfo.SduLength  = rxMsg.DLC;
+
+        CanIf_RxIndication(canId, &pduInfo);
+    }
 }
