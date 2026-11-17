@@ -1,591 +1,206 @@
 /**********************************************************
- * @file    Pwm.c
- * @brief   Pulse Width Modulation (PWM) Driver Source File
- * @details Hiện thực các API của PWM Driver chuẩn AUTOSAR cho STM32F103, sử dụng SPL.
- *          Quản lý chức năng PWM, không cấu hình chân GPIO.
+ * @file    Can.c
+ * @brief   AUTOSAR CAN Driver – bxCAN nội bộ STM32F103 (SPL)
+ *
+ * @details Module MCAL điều khiển bộ CAN tích hợp (bxCAN) trong
+ *          STM32F103 thông qua thư viện SPL (Standard Peripheral
+ *          Library).
+ *
+ *          ╔═══════════════════════════════════════════════╗
+ *          ║           KIẾN TRÚC PHẦN CỨNG                 ║
+ *          ╠═══════════════════════════════════════════════╣
+ *          ║                                               ║
+ *          ║  STM32F103                                    ║
+ *          ║  ┌─────────────────────────────────────┐      ║
+ *          ║  │  APB1 Bus (36 MHz)                  │      ║
+ *          ║  │  ┌──────────────────┐               │      ║
+ *          ║  │  │  bxCAN (CAN1)    │               │      ║
+ *          ║  │  │  @ 0x40006400    │               │      ║
+ *          ║  │  │                  │               │      ║
+ *          ║  │  │  ┌─Mailbox TX─┐  │  PA12 ──► TX  │      ║
+ *          ║  │  │  │ MB0 MB1 MB2│  │  PA11 ◄── RX  │      ║
+ *          ║  │  │  └────────────┘  │               │      ║
+ *          ║  │  │  ┌─Filter────┐   │               │      ║
+ *          ║  │  │  │ 14 banks  │   │               │      ║
+ *          ║  │  │  └───────────┘   │               │      ║
+ *          ║  │  │  ┌─FIFO RX───┐   │               │      ║
+ *          ║  │  │  │ FIFO0/1   │   │               │      ║
+ *          ║  │  │  └───────────┘   │               │      ║
+ *          ║  │  └──────────────────┘               │      ║
+ *          ║  └─────────────────────────────────────┘      ║
+ *          ╚═══════════════════════════════════════════════╝
+ *
+ *          Luồng truyền (TX):
+ *            1. CanIf gọi Can_Write(HTH, &pdu)
+ *            2. Can_Write() chuyển Can_PduType → CanTxMsg (SPL)
+ *            3. Gọi CAN_Transmit(CAN1, &txMsg) → nạp vào mailbox
+ *            4. bxCAN tự động truyền lên CAN bus
+ *            5. Can_MainFunction_Write() polling kiểm tra hoàn tất
+ *            6. Khi xong → gọi CanIf_TxConfirmation() báo lên trên
+ *
+ *          Cấu hình bit timing (500 kbps):
+ *            APB1 = 36 MHz
+ *            Prescaler = 4 → Time Quantum = 4/36MHz ≈ 111ns
+ *            1 bit = (1 + BS1 + BS2) TQ = (1 + 11 + 6) × 111ns = 2µs
+ *            Bit rate = 1/2µs = 500 kbps
+ *
+ * @note    Dùng CAN_Mode_LoopBack cho test trên Renode.
+ *          Khi chạy trên phần cứng thật, đổi sang CAN_Mode_Normal.
  *
  * @version 1.0
- * @date    05-Oct-2026
+ * @date    15-11-2026
  * @author  Nguyen Duc Dung
  **********************************************************/
 
-#include "Pwm.h"
+#include "Can.h"
+#include "CanIf.h"             // CanIf_TxConfirmation() – callback lên tầng trên
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_can.h"
+#include "misc.h"              // NVIC configuration
+#include <stddef.h>
 
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-#include "Det.h"
-#endif
 
-/**********************************************************
- * Static Variables & Defines
- **********************************************************/
-// Lưu trữ cấu hình driver PWM hiện tại
-static const Pwm_ConfigType *Pwm_CurrentConfigPtr = NULL;
+/* ========================================================
+ * Định nghĩa phần cứng và hằng số cấu hình
+ * --------------------------------------------------------
+ * CAN_PERIPH    : Peripheral bxCAN sử dụng (CAN1)
+ * CAN_GPIO_PORT : Port GPIO cho chân CAN (GPIOA)
+ * CAN_RX_PIN    : PA11 – Chân nhận CAN
+ * CAN_TX_PIN    : PA12 – Chân truyền CAN
+ * CAN_TX_SLOTS   : Số slot TX (bxCAN có 3 mailbox)
+ * ========================================================*/
+#define CAN_PERIPH        CAN1
+#define CAN_GPIO_PORT     GPIOA
+#define CAN_RX_PIN        GPIO_Pin_11
+#define CAN_TX_PIN        GPIO_Pin_12
 
-// Trạng thái đã khởi tạo của driver PWM
-static uint8 Pwm_IsInitialized = 0U;
-static uint8 Pwm_IsPowerStatePrepared = 0U;
-static Pwm_PowerStateType Pwm_CurrentPowerState = PWM_FULL_POWER;
-static Pwm_PowerStateType Pwm_TargetPowerState = PWM_FULL_POWER;
+#define CAN_TX_SLOTS      6u
 
-// Ghi giá trị compare vào CCR tương ứng kênh phần cứng
-static void Pwm_WriteCompareValue(const Pwm_ChannelConfigType *channelConfig, uint16 compareValue)
+
+/* ========================================================
+ * Biến trạng thái nội bộ
+ * --------------------------------------------------------
+ * s_inited       : Cờ đánh dấu đã khởi tạo chưa
+ * s_swPduHandle  : Lưu swPduHandle cho mỗi slot (để callback)
+ * s_txPending    : Cờ đánh dấu slot đang chờ TX hoàn tất
+ * s_txMailbox    : Mailbox ID do CAN_Transmit() trả về
+ * ========================================================*/
+static boolean            s_inited = FALSE;
+static volatile PduIdType s_swPduHandle[CAN_TX_SLOTS];
+static volatile boolean   s_txPending[CAN_TX_SLOTS];
+static volatile uint8     s_txMailbox[CAN_TX_SLOTS];
+
+
+
+/* =========================================================
+ * Can_Init – Khởi tạo toàn bộ CAN Driver & Phần cứng bxCAN
+ * =========================================================*/
+void Can_Init(void)
 {
-    if(channelConfig == NULL)
+    GPIO_InitTypeDef       gpioInit;
+    CAN_InitTypeDef        canInit;
+    CAN_FilterInitTypeDef  filterInit;
+    NVIC_InitTypeDef       nvicInit;
+
+    //1. Bật clock cho peripheral cần thiết
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE); 
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);
+
+    //2. Cấu hình PA12 (CAN_TX)
+    GPIO_StructInit(&gpioInit);
+    gpioInit.GPIO_Pin   = CAN_TX_PIN;
+    gpioInit.GPIO_Speed = GPIO_Speed_50MHz;
+    gpioInit.GPIO_Mode  = GPIO_Mode_AF_PP;
+    GPIO_Init(CAN_GPIO_PORT, &gpioInit);
+
+    //3. Cấu hình PA11 (CAN_RX)
+    gpioInit.GPIO_Pin  = CAN_RX_PIN;
+    gpioInit.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(CAN_GPIO_PORT, &gpioInit);
+
+    //4. Reset và cấu hình thông số cho bxCAN (500kbps)
+    CAN_DeInit(CAN_PERIPH);
+    CAN_StructInit(&canInit);
+
+    canInit.CAN_Prescaler = 4u;             // Chia clock: TQ = 4/36MHz
+    canInit.CAN_SJW       = CAN_SJW_1tq;    // Synchronization Jump Width: 1tq
+    canInit.CAN_BS1       = CAN_BS1_11tq;   // Bit Segment 1: 11tq
+    canInit.CAN_BS2       = CAN_BS2_6tq;    // Bit Segment 2: 6tq
+    canInit.CAN_Mode      = CAN_Mode_Normal;
+
+    canInit.CAN_TTCM      = DISABLE;        // Time Triggered: không
+    canInit.CAN_ABOM      = ENABLE;         // Auto Bus-Off Management: tự phục hồi
+    canInit.CAN_AWUM      = DISABLE;        // Auto Wake-Up: không
+    canInit.CAN_NART      = DISABLE;        // Auto Retransmission: BẬT (mặc định)
+    canInit.CAN_RFLM      = DISABLE;        // Receive FIFO Locked: không khóa  
+    canInit.CAN_TXFP      = DISABLE;        // TX FIFO Priority: theo ID (mặc định)
+    CAN_Init(CAN_PERIPH, &canInit);
+
+    //5. Cấu hình filter (Filter 0 chấp nhận tất cả mọi CAN ID vào FIFO0)
+    filterInit.CAN_FilterNumber         = 0;
+    filterInit.CAN_FilterMode           = CAN_FilterMode_IdMask;
+    filterInit.CAN_FilterScale          = CAN_FilterScale_32bit;
+    filterInit.CAN_FilterIdHigh         = 0x0000;
+    filterInit.CAN_FilterIdLow          = 0x0000;
+    filterInit.CAN_FilterMaskIdHigh     = 0x0000;
+    filterInit.CAN_FilterMaskIdLow      = 0x0000;
+    filterInit.CAN_FilterFIFOAssignment = CAN_Filter_FIFO0;
+    filterInit.CAN_FilterActivation     = ENABLE;
+    CAN_FilterInit(&filterInit);
+
+    //6. Xóa trạng thái các slot TX phần mềm
+    for(uint8 i = 0; i < CAN_TX_SLOTS; i++)
     {
-        return;
+        s_swPduHandle[i] = 0u;
+        s_txPending[i]   = FALSE;
+        s_txMailbox[i]   = 0u;
     }
 
-    switch(channelConfig->channel)
-    {
-        case 1U:
-            channelConfig->TIMx->CCR1 = compareValue;
-            break;
-        case 2U:
-            channelConfig->TIMx->CCR2 = compareValue;
-            break;
-        case 3U:
-            channelConfig->TIMx->CCR3 = compareValue;
-            break;
-        case 4U:
-            channelConfig->TIMx->CCR4 = compareValue;
-            break;
-        default:
-            break;
-    }
-}
+    //7. Bật ngắt nhận FIFO0 và cấu hình NVIC
+    CAN_ITConfig(CAN_PERIPH, CAN_IT_FMP0, ENABLE);
 
+    nvicInit.NVIC_IRQChannel                   = USB_LP_CAN1_RX0_IRQn;
+    nvicInit.NVIC_IRQChannelPreemptionPriority = 1;
+    nvicInit.NVIC_IRQChannelSubPriority        = 0;
+    nvicInit.NVIC_IRQChannelCmd                = ENABLE;
+    NVIC_Init(&nvicInit);
 
-/**********************************************************
- * Function Definitions
- **********************************************************/
-void Pwm_Init(const Pwm_ConfigType *ConfigPtr)
-{
-
-#if (PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized != 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_INIT_SERVICE_ID, PWM_E_ALREADY_INITIALIZED);
-        return;
-    }
-
-    if(ConfigPtr == NULL)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_INIT_SERVICE_ID, PWM_E_PARAM_POINTER);
-        return;
-    }
-#endif
-
-    Pwm_CurrentConfigPtr = ConfigPtr;
-
-    for(uint8 i = 0; i < ConfigPtr->NumChannels; i++)
-    {
-        const Pwm_ChannelConfigType *channelConfig = &ConfigPtr->Channels[i];
-
-        // Cấu hình chu kỳ cho Timer (ARR)
-        channelConfig->TIMx->ARR = channelConfig->defaultPeriod;
-
-        uint32 compareVal = Pwm_ComputeCompareValue(channelConfig->defaultPeriod, channelConfig->defaultDutyCycle);
-
-        // Giá trị compare ban đầu theo duty cycle mặc định
-        Pwm_WriteCompareValue(channelConfig, compareVal);
-
-        // Bật Timer
-        TIM_Cmd(channelConfig->TIMx, ENABLE);
-
-        // Nếu là TIM1 (advanced), cần bật thêm cờ xuất xung MOE
-        if(channelConfig->TIMx == TIM1)
-        {
-            TIM_CtrlPWMOutputs(TIM1, ENABLE);
-        }
-    }
-
-    Pwm_CurrentPowerState = PWM_FULL_POWER;
-    Pwm_TargetPowerState = PWM_FULL_POWER;
-    Pwm_IsPowerStatePrepared = 0U;
-    Pwm_IsInitialized = 1U;
-}
-
-
-
-void Pwm_DeInit(void)
-{
-#if (PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_DEINIT_SERVICE_ID, PWM_E_UNINIT);
-        return;
-    }
-#endif
-
-    for(uint8 i = 0; i < Pwm_CurrentConfigPtr->NumChannels; i++)
-    {
-        const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[i];
-        
-        // Nếu TIM1 thì tắt ngõ ra nâng cao
-        if(channelConfig->TIMx == TIM1)
-        {
-            TIM_CtrlPWMOutputs(TIM1, DISABLE);
-        }
-        
-        // Tắt Timer 
-        TIM_Cmd(channelConfig->TIMx, DISABLE);
-
-        // Reset thanh ghi Duty Cycle về 0 / ilde
-        Pwm_WriteCompareValue(channelConfig, 0U);
-    }
-
-    Pwm_CurrentConfigPtr = NULL;
-    Pwm_CurrentPowerState = PWM_FULL_POWER;
-    Pwm_TargetPowerState = PWM_FULL_POWER;
-    Pwm_IsPowerStatePrepared = 0U;
-    Pwm_IsInitialized = 0U;
+    //8. Đánh dấu driver đã sẵn sàng
+    s_inited = TRUE;
 }
 
 
 
-void Pwm_SetDutyCycle(Pwm_ChannelType ChannelNumber, uint16 DutyCycle)
+
+/* =========================================================
+ * Can_Write – API: Gửi CAN PDU
+ * ---------------------------------------------------------
+ * Luồng xử lý:
+ *   1. Kiểm tra điều kiện tiên quyết (init, param không NULL)
+ *   2. Kiểm tra slot TX tương ứng có rảnh không
+ *   3. Chuyển đổi Can_PduType (AUTOSAR) -> CanTxMsg (SPL)
+ *   4. Gọi CAN_Transmit() của SPL để nạp vào mailbox
+ *   5. Lưu thông tin để callback khi TX hoàn tất
+ *
+ * Mapping kiểu dữ liệu:
+ *   ┌───────────────────────┬─────────────────────────┐
+ *   │ Can_PduType (AUTOSAR) │     CanTxMsg (SPL)      │
+ *   ├───────────────────────┼─────────────────────────┤
+ *   │ id ≤ 0x7FF            │ StdId + CAN_Id_Standard │
+ *   │ id > 0x7FF            │ ExtId + CAN_Id_Extended │
+ *   │ length                │ DLC                     │
+ *   │ sdu[i]                │ Data[i]                 │
+ *   └───────────────────────┴─────────────────────────┘
+ * =========================================================*/
+Can_ReturnType Can_Write(Can_HwHandleType Hth, const Can_PduType* PduInfo)
 {
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
+    //1. Kiểm tra điều kiện
+    if(!s_inited || (PduInfo == NULL) || (PduInfo->sdu == NULL))
     {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_DUTY_CYCLE_SERVICE_ID, PWM_E_UNINIT);
-        return;
+        return CAN_NOT_OK;
     }
 
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_DUTY_CYCLE_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return;
-    }
-
-    if(DutyCycle > 0x8000U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_DUTY_CYCLE_SERVICE_ID, PWM_E_PARAM_DUTY);
-        return;
-    }
-#endif
-
-    // Lấy thông tin channel từ bảng config
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    // Đọc chu kỳ hiện tại từ ARR và tính toán giá trị CCR mới
-    uint32 currentPeriod = (uint32)channelConfig->TIMx->ARR;
-    uint32 compareVal = 0U;
-
-    if(DutyCycle == 0x8000U)
-    {
-        //100%: CCR = ARR + 1
-        compareVal = currentPeriod + 1U;
-    }
-    else if(DutyCycle == 0x0000U)
-    {
-        //0%: CCR = 0
-        compareVal = 0U;
-    }
-    else
-    {
-        //compareVal = (currentPeriod * DutyCycle) / 0x8000
-        compareVal = (uint32)(((uint32)currentPeriod * DutyCycle) >> 15U);
-    }
-
-    Pwm_WriteCompareValue(channelConfig, compareVal);
-}
-
-
-
-void Pwm_SetPeriodAndDuty(Pwm_ChannelType ChannelNumber, Pwm_PeriodType Period, uint16 DutyCycle)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_PERIOD_AND_DUTY_SERVICE_ID, PWM_E_UNINIT);
-        return;
-    }
-
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_PERIOD_AND_DUTY_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return;
-    }
-
-    if(Pwm_CurrentConfigPtr->Channels[ChannelNumber].classType != PWM_VARIABLE_PERIOD)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_PERIOD_AND_DUTY_SERVICE_ID, PWM_E_PERIOD_UNCHANGEABLE);
-        return;
-    }
-
-    if(DutyCycle > 0x8000U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_PERIOD_AND_DUTY_SERVICE_ID, PWM_E_PARAM_DUTY);
-        return;
-    }
-#endif
-
-    // Lấy thông tin channel từ bảng config
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    // Cập nhật chu kỳ mới vào thanh ghi ARR của Timer
-    channelConfig->TIMx->ARR = Period;
-
-    // Tính giá trị so sánh mới dựa vào period và duty cycle
-    uint32 compareVal = 0U;
-    
-    if(DutyCycle == 0x8000U)
-    {
-        // 100%
-        compareVal = (uint32)Period + 1U;
-    }
-    else if(DutyCycle == 0x0000U)
-    {
-        // 0%
-        compareVal = 0U;
-    }
-    else
-    {
-        // compareVal = (Period * Duty Cycle) / 0x8000
-        compareVal = (uint32)(((uint32)Period * DutyCycle) >> 15U);
-    }
-    
-    // Ghi value vào thanh ghi CCR
-    Pwm_WriteCompareValue(channelConfig, compareVal);
-}
-
-
-
-void Pwm_SetOutputToIdle(Pwm_ChannelType ChannelNumber)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_OUTPUT_TO_IDLE_SERVICE_ID, PWM_E_UNINIT);
-        return;
-    }
-
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_OUTPUT_TO_IDLE_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return;
-    }
-#endif
-
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    uint32 compareVal = 0U;
-
-    // Xác định giá trị compare để đưa ouput về đúng Idle State
-    // Nếu mức idle trùng với mức active (polarity) => 100%, và ngược lại
-    if(channelConfig->idleState == channelConfig->polarity)
-    {
-        // 100%
-        compareVal = (uint32)(channelConfig->TIMx->ARR + 1U);
-    }
-    else
-    {
-        // 0%
-        compareVal = 0U;
-    }
-
-    Pwm_WriteCompareValue(channelConfig, compareVal);
-}
-
-
-
-Pwm_OutputStateType Pwm_GetOutputState(Pwm_ChannelType ChannelNumber)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_OUTPUT_STATE_SERVICE_ID, PWM_E_UNINIT);
-        return PWM_LOW;
-    }
-
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_OUTPUT_STATE_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return PWM_LOW;
-    }
-#endif
-
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    uint16 isOutputEnabled = 0U;
-
-    switch (channelConfig->channel)
-    {
-        case 1U:
-            isOutputEnabled = (channelConfig->TIMx->CCER & TIM_CCER_CC1E);
-            break;
-        case 2U:
-            isOutputEnabled = (channelConfig->TIMx->CCER & TIM_CCER_CC2E);
-            break;
-        case 3U:
-            isOutputEnabled = (channelConfig->TIMx->CCER & TIM_CCER_CC3E);
-            break;
-        case 4U:
-            isOutputEnabled = (channelConfig->TIMx->CCER & TIM_CCER_CC4E);
-            break;
-        default:
-            break;
-    }
-
-    if(isOutputEnabled != 0U)
-    {
-        return PWM_HIGH;
-    }
-    else{
-        return PWM_LOW;
-    }
-
-}
-
-
-
-void Pwm_DisableNotification(Pwm_ChannelType ChannelNumber)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_DISABLE_NOTIFICATION_SERVICE_ID, PWM_E_UNINIT);
-        return;
-    }
-
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_DISABLE_NOTIFICATION_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return;
-    }
-#endif
-
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    switch(channelConfig->channel)
-    {
-        case 1U:
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC1, DISABLE);
-            break;
-        case 2U:
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC2, DISABLE);
-            break;
-        case 3U:
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC3, DISABLE);
-            break;
-        case 4U:
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC4, DISABLE);
-            break;
-        default:
-            break;
-    }
-}
-
-
-
-void Pwm_EnableNotification(Pwm_ChannelType ChannelNumber, Pwm_EdgeNotificationType Notification)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_ENABLE_NOTIFICATION_SERVICE_ID, PWM_E_UNINIT);
-        return;
-    }
-
-    if(ChannelNumber >= Pwm_CurrentConfigPtr->NumChannels)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_ENABLE_NOTIFICATION_SERVICE_ID, PWM_E_PARAM_CHANNEL);
-        return;
-    }
-#endif
-
-    const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[ChannelNumber];
-
-    // Xóa cờ ngắt đang có và kích hoạt ngắt
-    switch(channelConfig->channel)
-    {
-        case 1U:
-            TIM_ClearITPendingBit(channelConfig->TIMx, TIM_IT_CC1);
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC1, ENABLE);
-            break;
-        case 2U:
-            TIM_ClearITPendingBit(channelConfig->TIMx, TIM_IT_CC2);
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC2, ENABLE);
-            break;
-        case 3U:
-            TIM_ClearITPendingBit(channelConfig->TIMx, TIM_IT_CC3);
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC3, ENABLE);
-            break;
-        case 4U:
-            TIM_ClearITPendingBit(channelConfig->TIMx, TIM_IT_CC4);
-            TIM_ITConfig(channelConfig->TIMx, TIM_IT_CC4, ENABLE);
-            break;
-        default:
-            break;
-    }
-}
-
-
-
-Std_ReturnType Pwm_SetPowerState(Pwm_PowerStateRequestResultType *Result)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_POWER_STATE_SERVICE_ID, PWM_E_UNINIT);
-        if(Result != NULL)
-        {
-            *Result = PWM_SERVICE_ACCEPTED;
-        }
-        return E_NOT_OK;
-    }
-
-    if(Pwm_IsPowerStatePrepared == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_SET_POWER_STATE_SERVICE_ID, PWM_E_NOT_DISENGAGED);
-        if(Result != NULL)
-        {
-            *Result = PWM_NOT_INIT;
-        }
-        return E_NOT_OK;
-    }
-#endif
-
-    // Thực thi chuyển trạng thái phần cứng dựa trên Pwm_TargetPowerState
-    if(Pwm_TargetPowerState == PWM_FULL_POWER)
-    {
-        // Bật lại Timer cho tất cả các kênh được cấu hình
-        for(uint8 i = 0; i < Pwm_CurrentConfigPtr->NumChannels; i++)
-        {
-            const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[i];
-            TIM_Cmd(channelConfig->TIMx, ENABLE);
-            
-            if(channelConfig->TIMx == TIM1)
-            {
-                TIM_CtrlPWMOutputs(TIM1, ENABLE);
-            }
-        }
-    }
-    else // Chế độ LOW POWER
-    {
-        // Dừng Timer của tất cả các kênh để giảm dòng tiêu thụ
-        for(uint8 i = 0; i < Pwm_CurrentConfigPtr->NumChannels; i++)
-        {
-            const Pwm_ChannelConfigType *channelConfig = &Pwm_CurrentConfigPtr->Channels[i];
-            TIM_Cmd(channelConfig->TIMx, DISABLE);
-
-            if(channelConfig->TIMx == TIM1)
-            {
-                TIM_CtrlPWMOutputs(TIM1, DISABLE);
-            }
-        }
-    }
-
-    // Cập nhật trạng thái nguồn
-    Pwm_CurrentPowerState = Pwm_TargetPowerState;
-    Pwm_IsPowerStatePrepared = 0U;
-    *Result = PWM_SERVICE_ACCEPTED;
-    return E_OK;
-}
-
-
-
-Std_ReturnType Pwm_GetCurrentPowerState(Pwm_PowerStateType *CurrentPowerState, Pwm_PowerStateRequestResultType *Result)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_CURRENT_POWER_STATE_SERVICE_ID, PWM_E_UNINIT);
-        if(Result != NULL)
-        {
-            *Result = PWM_NOT_INIT;
-        }
-        return E_NOT_OK;
-    }
-
-    if(CurrentPowerState == NULL)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_CURRENT_POWER_STATE_SERVICE_ID, PWM_E_PARAM_POINTER);
-        if(Result != NULL)
-        {
-            *Result = PWM_SERVICE_ACCEPTED;
-        }
-        return E_NOT_OK;
-    }
-#endif
-
-    // Lấy trạng thái nguồn hiện tại 
-    *CurrentPowerState = Pwm_CurrentPowerState;
-    *Result = PWM_SERVICE_ACCEPTED;
-    return E_OK;
-}
-
-
-Std_ReturnType Pwm_GetTargetPowerState(Pwm_PowerStateType *TargetPowerState, Pwm_PowerStateRequestResultType *Result)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_TARGET_POWER_STATE_SERVICE_ID, PWM_E_UNINIT);
-        if(Result != NULL)
-        {
-            *Result = PWM_NOT_INIT;
-        }
-        return E_NOT_OK;
-    }
-
-    if(TargetPowerState == NULL)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_GET_TARGET_POWER_STATE_SERVICE_ID, PWM_E_PARAM_POINTER);
-        if(Result != NULL)
-        {
-            *Result = PWM_SERVICE_ACCEPTED;
-        }
-        return E_NOT_OK;
-    }
-#endif
-
-    // Lấy trạng thái nguồn mục tiêu
-    *TargetPowerState = Pwm_TargetPowerState;
-    *Result = PWM_SERVICE_ACCEPTED;
-    return E_OK;
-}
-
-
-
-Std_ReturnType Pwm_PreparePowerState(Pwm_PowerStateType PowerState, Pwm_PowerStateRequestResultType *Result)
-{
-#if(PWM_DEV_ERROR_DETECT == STD_ON)
-    if(Pwm_IsInitialized == 0U)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_PREPARE_POWER_STATE_SERVICE_ID, PWM_E_UNINIT);
-        if(Result != NULL)
-        {
-            *Result = PWM_NOT_INIT;
-        }
-        return E_NOT_OK;
-    }
-
-    if((PowerState != PWM_FULL_POWER) && (PowerState != PWM_LOW_POWER))
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_PREPARE_POWER_STATE_SERVICE_ID, PWM_E_POWER_STATE_NOT_SUPPORTED);
-        if(Result != NULL)
-        {
-            *Result = PWM_POWER_STATE_NOT_SUPP;
-        }
-        return E_NOT_OK;
-    }
-
-    if(PowerState == Pwm_CurrentPowerState)
-    {
-        Det_ReportError(PWM_MODULE_ID, PWM_INSTANCE_ID, PWM_PREPARE_POWER_STATE_SERVICE_ID, PWM_E_TRANSITION_NOT_POSSIBLE);
-        if(Result != NULL)
-        {
-            *Result = PWM_TRANS_NOT_POSSIBLE;
-        }
-        return E_NOT_OK;
-    }
-#endif
-    
-    // Lưu trạng thái mục tiêu và bật cờ sẵn sàng cho Pwm_SetPowerState
-    Pwm_TargetPowerState = PowerState;
-    Pwm_IsPowerStatePrepared = 1U;
-    *Result = PWM_SERVICE_ACCEPTED;
-    return E_OK;
+    //2. Giới hạn chỉ số slot 
 }

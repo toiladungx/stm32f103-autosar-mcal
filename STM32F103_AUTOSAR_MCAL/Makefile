@@ -47,6 +47,15 @@ INC_DIRS := \
 INCLUDES := $(addprefix -I, $(INC_DIRS))
 
 # ===========================
+# Directory creation
+# ===========================
+ifeq ($(OS),Windows_NT)
+  MKDIR_P = if not exist "$(subst /,\,$(1))" mkdir "$(subst /,\,$(1))"
+else
+  MKDIR_P = mkdir -p "$(1)"
+endif
+
+# ===========================
 # C/ASM/LD flags
 # ===========================
 CFLAGS_COMMON := -O2 -g3 -Wall -Wextra -Wno-unused-parameter \
@@ -99,22 +108,22 @@ all: $(TARGET).bin size
 # Compile rules
 # ===========================
 $(BUILDDIR)/%.o: %.c
-	@mkdir -p $(dir $@)
+	@$(call MKDIR_P,$(dir $@))
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o: %.s
-	@mkdir -p $(dir $@)
+	@$(call MKDIR_P,$(dir $@))
 	$(AS) $(CPUFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o: %.S
-	@mkdir -p $(dir $@)
+	@$(call MKDIR_P,$(dir $@))
 	$(AS) $(ASFLAGS) -c $< -o $@
 
 # ===========================
 # Link
 # ===========================
 $(TARGET).elf: $(OBJS) $(LDSCRIPT)
-	@mkdir -p $(dir $@)
+	@$(call MKDIR_P,$(dir $@))
 	$(CC) $(CPUFLAGS) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 
 # ===========================

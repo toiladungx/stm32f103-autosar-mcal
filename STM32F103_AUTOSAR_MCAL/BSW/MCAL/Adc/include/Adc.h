@@ -126,7 +126,7 @@ Adc_StreamNumSampleType Adc_GetStreamLastPointer(Adc_GroupType Group, Adc_ValueG
  *          API này chỉ có hiệu lực khi `ADC_VERSION_INFO_API == STD_ON`.
  * @param[out] VersionInfo Con trỏ cấu trúc nhận thông tin version
  **********************************************************/
-void Adc_GetVersionInfo(Std_VersionInfoType *VersionInfo);
+// void Adc_GetVersionInfo(Std_VersionInfoType *VersionInfo);
 
 /**********************************************************
  * @brief   Áp trạng thái nguồn đã chuẩn bị cho ADC Driver

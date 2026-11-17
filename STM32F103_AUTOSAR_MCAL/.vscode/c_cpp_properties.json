@@ -4,11 +4,20 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/platform/include",
+                "${workspaceFolder}/BSW/Common/include",
+                "${workspaceFolder}/BSW/MCAL/Adc/include",
+                "${workspaceFolder}/BSW/MCAL/Adc/config",
+                "${workspaceFolder}/BSW/MCAL/Can/include",
+                "${workspaceFolder}/BSW/MCAL/Can/config",
+                "${workspaceFolder}/BSW/MCAL/Dio/include",
+                "${workspaceFolder}/BSW/MCAL/Lin/include",
+                "${workspaceFolder}/BSW/MCAL/Lin/config",
+                "${workspaceFolder}/BSW/MCAL/Port/include",
+                "${workspaceFolder}/BSW/MCAL/Port/config",
+                "${workspaceFolder}/BSW/MCAL/Pwm/include",
+                "${workspaceFolder}/BSW/MCAL/Pwm/config",
                 "${workspaceFolder}/platform/spl/inc",
-                "${workspaceFolder}/platform/bsp/cmsis",
-                "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/arm-none-eabi/include",
-                "C:/Program Files (x86)/Arm/GNU Toolchain mingw-w64-i686-arm-none-eabi/lib/gcc/arm-none-eabi/15.3.1/include"
+                "${workspaceFolder}/platform/bsp/cmsis"
             ],
             "defines": [
                 "STM32F10X_MD",
