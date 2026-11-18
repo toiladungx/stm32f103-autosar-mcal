@@ -8,7 +8,7 @@
  * File này cung cấp các định nghĩa kiểu chuẩn được sử dụng trong toàn bộ stack
  * AUTOSAR.
  *
- * @version 1.0.0
+ * @version 1.0
  * @date    2025-10-15
  * @author  HALA Academy
  */

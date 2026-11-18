@@ -1,0 +1,2 @@
+
+//#define CAN_RX_PROCESSING_POLLING STD_ON

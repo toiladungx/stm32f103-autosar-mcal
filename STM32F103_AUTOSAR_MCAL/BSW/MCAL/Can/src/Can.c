@@ -54,6 +54,7 @@
 
 #include "Can.h"
 #include "CanIf.h"             // CanIf_TxConfirmation() – callback lên tầng trên
+#include "Can_Cfg.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_can.h"
@@ -75,7 +76,7 @@
 #define CAN_RX_PIN        GPIO_Pin_11
 #define CAN_TX_PIN        GPIO_Pin_12
 
-#define CAN_TX_SLOTS      6u
+#define CAN_TX_SLOTS      3u
 
 
 /* ========================================================
@@ -213,8 +214,8 @@ Can_ReturnType Can_Write(Can_HwHandleType Hth, const Can_PduType* PduInfo)
         txMsg.StdId = 0u;
     }else{
         txMsg.IDE   = CAN_Id_Standard;
-        txMsg.ExtId = PduInfo->id & 0x7FFu;
-        txMsg.StdId = 0u;
+        txMsg.ExtId = 0u;
+        txMsg.StdId = PduInfo->id & 0x7FFu;
     }
 
     for(uint8 i = 0; i < txMsg.DLC; i++)
@@ -280,7 +281,7 @@ void Can_MainFunction_Write(void)
 }
 
 
-
+#ifdef CAN_RX_PROCESSING_POLLING == STD_ON
 /* ===========================================================
  * Can_MainFunction_Read – Kiểm tra định kỳ và đọc dữ liệu nhận RX
  * Trích xuất message từ FIFO0 và FIFO1, sau đó báo lên CanIf_RxIndication
@@ -345,7 +346,7 @@ void Can_MainFunction_Read(void)
 }
 
 
-
+#else
 /* ===========================================================
  * USB_LP_CAN1_RX0_IRQHandler – Trình phục vụ ngắt nhận FIFO0
  * ISR này đọc frame và chuyển lên CanIf_RxIndication.
@@ -385,3 +386,4 @@ __attribute__((weak)) void USB_LP_CAN1_RX0_IRQHandler(void)
         CanIf_RxIndication(canId, &pduInfo);
     }
 }
+#endif

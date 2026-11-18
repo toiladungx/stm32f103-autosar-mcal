@@ -26,8 +26,8 @@
  * @date    15-11-2026
  * @author  Nguyen Duc Dung
 **********************************************************/
-#ifndef _CAN_H_
-#define _CAN_H_
+#ifndef CAN_H
+#define CAN_H
 
 #include "Can_GeneralTypes.h"
 
@@ -36,7 +36,7 @@
  * @details Thực hiện các bước:
  *          1. Bật clock cho GPIOA, AFIO, CAN1
  *          2. Cấu hình GPIO: PA12=CAN_TX (AF Push-Pull), PA11=CAN_RX (Input)
- *          3. Cấu hình bxCAN: tốc độ 500kbps, LoopBack mode
+ *          3. Cấu hình bxCAN: tốc độ 500kbps, Normal mode (hoặc LoopBack khi test nội bộ)
  *          4. Cấu hình bộ lọc: Filter 0 chấp nhận tất cả CAN ID
  *          5. Clear các biến trạng thái TX
  *
@@ -49,14 +49,14 @@ void Can_Init(void);
 
 /**********************************************************
  * @brief   Gửi 1 CAN PDU qua bxCAN
- * @param   Hth      Hardware Transmit Handle – chọn slot TX0..2) (
+ * @param   Hth      Hardware Transmit Handle – chọn slot TX0,1,2)
  * @param   PduInfo  Con trỏ tới cấu trúc Can_PduType chứa:
  *                   - id          : CAN ID (Standard hoặc Extended)
  *                   - length      : DLC (0..8 byte)
  *                   - sdu         : Con trỏ tới dữ liệu
  *                   - swPduHandle : Handle để callback xác nhận
  * @return  CAN_OK     : Đã nạp vào mailbox, đang truyền
- *          CAN_BUSY   : Tất cả mailbox T,X đang bận
+ *          CAN_BUSY   : Tất cả mailbox TX đang bận
  *          CAN_NOT_OK : Lỗi tham số (NULL pointer chưa init...)
  **********************************************************/
 Can_ReturnType Can_Write(Can_HwHandleType Hth, const Can_PduType *PduInfo);
@@ -85,4 +85,4 @@ void Can_MainFunction_Write(void);
  **********************************************************/
 void Can_MainFunction_Read(void);
 
-#endif
+#endif /* CAN_H */
