@@ -38,7 +38,7 @@
  */
 void CanIf_Init(void);
 
-/**
+/** */
  * @brief   PduR gọi: yêu cầu gửi I-PDU qua CAN bus
  * @param   CanIfTxPduId  ID PDU phía CanIf (từ bảng route PduR)
  * @param   PduInfoPtr    Dữ liệu PDU (payload + length)
